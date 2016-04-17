@@ -37,24 +37,24 @@ All you need to do is to implement 1 interface, the ISquidRenderer.
 
 #Standard Controls:
 
-Button
-CheckBox
-DropDownList
-Dialog
-FlowLayoutFrame
-Frame
-ImageControl
-Label
-ListBox
-ListView
-Panel
-RadioButton
-Resizer
-Scrollbar
-Slider
-SplitContainer
-TabControl
-TextArea
-TextBox
-TreeView
-Window
+- Button
+- CheckBox
+- DropDownList
+- Dialog
+- FlowLayoutFrame
+- Frame
+- ImageControl
+- Label
+- ListBox
+- ListView
+- Panel
+- RadioButton
+- Resizer
+- Scrollbar
+- Slider
+- SplitContainer
+- TabControl
+- TextArea
+- TextBox
+- TreeView
+- Window
