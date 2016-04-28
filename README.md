@@ -58,3 +58,8 @@ All you need to do is to implement 1 interface, the ISquidRenderer.
 - TextBox
 - TreeView
 - Window
+
+TODOs:
+- merge TextBox (single line) and TextArea (multi line)
+- remove Xml namespace, classes and serializer. should be external (json/yaml/etc)
+- clean up comments and commented code
