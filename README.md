@@ -30,6 +30,7 @@ All you need to do is to implement a single interface - the ISquidRenderer.
 - control state fading
 - easy skinning via styles
 - automatic batching
+- easy to extend
 - it’s fast
 
 ### Standard Controls:
