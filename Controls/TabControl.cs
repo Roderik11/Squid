@@ -13,7 +13,7 @@ namespace Squid
     /// A TabControl
     /// </summary>
     [Toolbox]
-    public class TabControl : Control
+    public class TabControl : Frame
     {
         private TabPage _selectedTab;
 
@@ -46,7 +46,7 @@ namespace Squid
                 if (_selectedTab != null)
                 {
                     _selectedTab.Button.Checked = false;
-                    Elements.Remove(_selectedTab);
+                    Controls.Remove(_selectedTab);
                 }
 
                 if (value != null && !TabPages.Contains(value))
@@ -60,7 +60,7 @@ namespace Squid
                 if (_selectedTab != null)
                 {
                     _selectedTab.Button.Checked = true;
-                    Elements.Add(_selectedTab);
+                    Controls.Add(_selectedTab);
                 }
 
                 //if (OnSelectedTabChanged != null)
@@ -73,6 +73,8 @@ namespace Squid
         /// </summary>
         public TabControl()
         {
+            NoEvents = false;
+
             TabPages = new TabPageCollection();
             TabPages.ItemAdded += TabPages_ItemAdded;
             TabPages.ItemRemoved += TabPages_ItemRemoved;
@@ -80,11 +82,11 @@ namespace Squid
 
             Size = new Point(100, 100);
 
-            ButtonFrame = new Frame();
+            ButtonFrame = new Frame { Name = "tabbuttonframe" };
             ButtonFrame.Size = new Point(100, 35);
             ButtonFrame.Dock = DockStyle.Top;
             ButtonFrame.Scissor = true;
-            Elements.Add(ButtonFrame);
+            Controls.Add(ButtonFrame);
         }
 
         void TabPages_BeforeItemsCleared(object sender, EventArgs e)
@@ -100,6 +102,7 @@ namespace Squid
         {
             e.Item.Button.MouseClick -= Button_MouseClick;
             e.Item.Button.Parent = null;
+            e.Item.Parent = null;
         }
 
         void TabPages_ItemAdded(object sender, ListEventArgs<TabPage> e)

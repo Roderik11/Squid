@@ -195,7 +195,7 @@ namespace Squid
 
             target.Controls.Add(this);
 
-            SetDepth();
+            //SetDepth();
 
             if (Modal)
                 target.RegisterModal(this);

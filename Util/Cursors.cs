@@ -8,7 +8,7 @@ namespace Squid
     /// Standard cursor type strings.
     /// Note: You don't have to use these.
     /// </summary>
-    public class CursorNames
+    public class Cursors
     {
         /// <summary>
         /// The default

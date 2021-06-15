@@ -60,7 +60,7 @@ namespace Squid
             Left.MousePress += Grip_OnPress;
             Left.MouseUp += Grip_OnUp;
             Left.Tag = AnchorStyles.Left;
-            Left.Cursor = CursorNames.SizeWE;
+            Left.Cursor = Cursors.SizeWE;
             Elements.Add(Left);
 
             Top = new Control();
@@ -70,7 +70,7 @@ namespace Squid
             Top.MousePress += Grip_OnPress;
             Top.MouseUp += Grip_OnUp;
             Top.Tag = AnchorStyles.Top;
-            Top.Cursor = CursorNames.SizeNS;
+            Top.Cursor = Cursors.SizeNS;
             Elements.Add(Top);
 
             Right = new Control();
@@ -80,7 +80,7 @@ namespace Squid
             Right.MousePress += Grip_OnPress;
             Right.MouseUp += Grip_OnUp;
             Right.Tag = AnchorStyles.Right;
-            Right.Cursor = CursorNames.SizeWE;
+            Right.Cursor = Cursors.SizeWE;
             Elements.Add(Right);
 
             Bottom = new Control();
@@ -90,7 +90,7 @@ namespace Squid
             Bottom.MousePress += Grip_OnPress;
             Bottom.MouseUp += Grip_OnUp;
             Bottom.Tag = AnchorStyles.Bottom;
-            Bottom.Cursor = CursorNames.SizeNS;
+            Bottom.Cursor = Cursors.SizeNS;
             Elements.Add(Bottom);
 
             TopLeft = new Control();
@@ -100,7 +100,7 @@ namespace Squid
             TopLeft.MousePress += Grip_OnPress;
             TopLeft.MouseUp += Grip_OnUp;
             TopLeft.Tag = AnchorStyles.Top | AnchorStyles.Left;
-            TopLeft.Cursor = CursorNames.SizeNWSE;
+            TopLeft.Cursor = Cursors.SizeNWSE;
             Elements.Add(TopLeft);
 
             TopRight = new Control();
@@ -111,7 +111,7 @@ namespace Squid
             TopRight.MousePress += Grip_OnPress;
             TopRight.MouseUp += Grip_OnUp;
             TopRight.Tag = AnchorStyles.Top | AnchorStyles.Right;
-            TopRight.Cursor = CursorNames.SizeNESW;
+            TopRight.Cursor = Cursors.SizeNESW;
             Elements.Add(TopRight);
 
             BottomLeft = new Control();
@@ -122,7 +122,7 @@ namespace Squid
             BottomLeft.MousePress += Grip_OnPress;
             BottomLeft.MouseUp += Grip_OnUp;
             BottomLeft.Tag = AnchorStyles.Bottom | AnchorStyles.Left;
-            BottomLeft.Cursor = CursorNames.SizeNESW;
+            BottomLeft.Cursor = Cursors.SizeNESW;
             Elements.Add(BottomLeft);
 
             BottomRight = new Control();
@@ -133,7 +133,7 @@ namespace Squid
             BottomRight.MousePress += Grip_OnPress;
             BottomRight.MouseUp += Grip_OnUp;
             BottomRight.Tag = AnchorStyles.Bottom | AnchorStyles.Right;
-            BottomRight.Cursor = CursorNames.SizeNWSE;
+            BottomRight.Cursor = Cursors.SizeNWSE;
             Elements.Add(BottomRight);
 
             Adjust();
@@ -157,6 +157,16 @@ namespace Squid
 
             BottomRight.Size = new Point(_grip.Right, _grip.Bottom);
             BottomRight.Position = new Point(Size.x - _grip.Right, Size.y - _grip.Bottom);
+
+            Left.Visible = !Left.Size.IsEmpty;
+            Top.Visible = !Top.Size.IsEmpty;
+            Right.Visible = !Right.Size.IsEmpty;
+            Bottom.Visible = !Bottom.Size.IsEmpty;
+
+            TopLeft.Visible = Top.Visible && Left.Visible;
+            TopRight.Visible = Top.Visible && Right.Visible;
+            BottomLeft.Visible = Bottom.Visible && Left.Visible;
+            BottomRight.Visible = Bottom.Visible && Right.Visible;
         }
 
         void Grip_OnDown(Control sender, MouseEventArgs args)

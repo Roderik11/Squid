@@ -60,8 +60,11 @@ namespace Squid
 
                 _selectedNode = value;
 
-                if (_selectedNode != null) 
+                if (_selectedNode != null)
+                {
                     _selectedNode.Selected = true;
+                    _selectedNode.Focus();
+                }
 
                 if (SelectedNodeChanged != null)
                     SelectedNodeChanged(this, _selectedNode);
@@ -104,6 +107,22 @@ namespace Squid
             ItemContainer.Parent = ClipFrame;
 
             MouseWheel += TreeView_MouseWheel;
+        }
+
+        public void NextNode()
+        {
+            var selected = SelectedNode;
+            var index = ItemContainer.Controls.IndexOf(selected);
+            var next = Math.Min(index + 1, ItemContainer.Controls.Count - 1);
+            SelectedNode = ItemContainer.Controls[next] as TreeNode;
+        }
+
+        public void PreviousNode()
+        {
+            var selected = SelectedNode;
+            var index = ItemContainer.Controls.IndexOf(selected);
+            var prev = Math.Max(index - 1, 0);
+            SelectedNode = ItemContainer.Controls[prev] as TreeNode;
         }
 
         void TreeView_MouseWheel(Control sender, MouseEventArgs args)
@@ -299,6 +318,8 @@ namespace Squid
             set
             {
                 if (value == _expanded) return;
+                if (Nodes.Count == 0) return;
+
                 _expanded = value;
 
                 if (!_suspendEvents)
@@ -331,7 +352,7 @@ namespace Squid
         /// Gets the parent.
         /// </summary>
         /// <value>The parent.</value>
-        public TreeNode Parent { get; private set; }
+        public TreeNode ParentNode { get; private set; }
 
         public TreeNode()
         {
@@ -359,7 +380,7 @@ namespace Squid
         {
             foreach (TreeNode node in Nodes)
             {
-                node.Parent = null;
+                node.ParentNode = null;
 
                 if (treeview != null)
                     treeview.RemoveNode(node);
@@ -371,13 +392,13 @@ namespace Squid
             if (treeview != null)
                 treeview.RemoveNode(e.Item);
 
-            e.Item.Parent = null;
+            e.Item.ParentNode = null;
         }
 
         void Nodes_ItemAdded(object sender, ListEventArgs<TreeNode> e)
         {
             e.Item.NodeDepth = NodeDepth + 1;
-            e.Item.Parent = this;
+            e.Item.ParentNode = this;
 
             if (treeview != null && Expanded)
             {
@@ -390,8 +411,8 @@ namespace Squid
 
         public void Remove()
         {
-            if (Parent != null)
-                Parent.Nodes.Remove(this);
+            if (ParentNode != null)
+                ParentNode.Nodes.Remove(this);
             else if (treeview != null)
             {
                 treeview.Nodes.Remove(this);
@@ -484,10 +505,10 @@ namespace Squid
             MouseClick += Label_MouseClick;
         }
 
-        //protected override void OnStateChanged()
-        //{
-        //    Label.State = State;
-        //}
+        protected override void OnStateChanged()
+        {
+            Label.State = State;
+        }
 
         void Label_MouseClick(Control sender, MouseEventArgs args)
         {

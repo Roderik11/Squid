@@ -164,7 +164,6 @@ namespace Squid
             if (!args.Cancel)
             {
                 base.RemoveAt(index);
-
                 OnItemRemoved(this, args);
             }
 
@@ -256,7 +255,9 @@ namespace Squid
                 bool happened = base.Remove(item);
 
                 if (happened)
+                {
                     OnItemRemoved(this, args);
+                }
 
                 return happened;
             }

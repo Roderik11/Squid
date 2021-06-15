@@ -52,6 +52,8 @@ namespace Squid
             Controls.Add(Label);
         }
 
+        private Control realContext;
+
         /// <summary>
         /// Sets the context.
         // Gets called when the tooltip context is updated.
@@ -64,10 +66,12 @@ namespace Squid
             {
                 // fade out
                 FadeDirection = -1;
+                realContext = null;
             }
             else
             {
                 _context = context;
+                realContext = context;
 
                 // grab the tooltip text
                 Label.Text = context.Tooltip;
@@ -206,19 +210,30 @@ namespace Squid
 
         protected override void OnUpdate()
         {
-            // increment timer if delay isnt reached
-            if (DelayTimer < Delay) DelayTimer += Gui.TimeElapsed;
-
-            // if delay is reached
-            if (DelayTimer >= Delay)
+            if(realContext != null)
             {
-                // fade Opacity in/out over Duration depending on FadeDirection
-                // (FPS independent linear interpolation) 
-                Opacity += (Gui.TimeElapsed / FadeDuration) * FadeDirection;
+                if(Gui.MouseMovement.IsEmpty)
+                {
+                    if (DelayTimer < Delay)
+                        DelayTimer += Gui.TimeElapsed;
+                }
+                else if(DelayTimer < Delay)
+                {
+                    DelayTimer = 0;
+                }
 
-                // clamp between 0 and 1
-                Opacity = Opacity < 0 ? 0 : (Opacity > 1 ? 1 : Opacity);
+                if (DelayTimer >= Delay)
+                    Opacity += (Gui.TimeElapsed / FadeDuration);
+                else
+                    Opacity -= (Gui.TimeElapsed / FadeDuration);
             }
+            else
+            {
+                DelayTimer = 0;
+                Opacity -= (Gui.TimeElapsed / FadeDuration);
+            }
+
+            Opacity = Opacity < 0 ? 0 : (Opacity > 1 ? 1 : Opacity);
 
             // make the control invisible when completely faded out
             if (FadeDirection < 0 && Opacity == 0)

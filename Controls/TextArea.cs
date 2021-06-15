@@ -232,7 +232,7 @@ namespace Squid
             SelectionColor = ColorInt.ARGB(.5f, 1, 1, 1);
 
             Style = "textbox";
-            Cursor = CursorNames.Select;
+            Cursor = Cursors.Select;
             Size = new Point(100, 60);
             TextAlign = Alignment.TopLeft;
             AllowFocus = true;
@@ -1127,7 +1127,7 @@ namespace Squid
 
         protected override void OnStateChanged()
         {
-            Style style = Desktop.GetStyle(Style).Styles[State];
+            Style style = LocalStyle.Styles[State];
             UpdateText(style);
         }
 
@@ -1135,7 +1135,7 @@ namespace Squid
         {
             if (IsDirty)
             {
-                Style style = Desktop.GetStyle(Style).Styles[State];
+                Style style = LocalStyle.Styles[State];
                 UpdateText(style);
             }
 
@@ -1154,7 +1154,7 @@ namespace Squid
 
             if (IsDirty)
             {
-                Style style = Desktop.GetStyle(Style).Styles[State];
+                Style style = LocalStyle.Styles[State];
                 UpdateText(style);
             }
 

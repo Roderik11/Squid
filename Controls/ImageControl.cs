@@ -70,6 +70,7 @@ namespace Squid
         {
             base.DrawStyle(style, opacity);
 
+            if (string.IsNullOrEmpty(Texture)) return;
             int texture = Gui.Renderer.GetTexture(Texture);
             if (texture < 0) return;
 

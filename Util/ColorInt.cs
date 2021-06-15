@@ -180,7 +180,7 @@ namespace Squid
         /// <returns></returns>
         public static int ARGB(float a, float r, float g, float b)
         {
-            return ARGB((int)(a * 0xff), (int)(r * 0xff), (int)(g * 0xff), (int)(b * 0xff));
+            return ARGB((int)(a * 0xff), (int)(b * 0xff), (int)(g * 0xff), (int)(r * 0xff));
         }
     }
 }

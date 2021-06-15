@@ -5,7 +5,6 @@ using System.Runtime.InteropServices;
 
 namespace Squid
 {
-
     public delegate string TranslateStringHandler(string text);
 
     /// <summary>
@@ -63,6 +62,8 @@ namespace Squid
         internal static ButtonState[] Buttons;
         internal static KeyData[] KeyBuffer { get; private set; }
         internal static int NumKeyEvents { get; private set; }
+
+        public static int DragThreshold = 6;
 
         /// <summary>
         /// Gets the mouse position.

@@ -203,7 +203,11 @@ namespace Squid
         private Point _floatingPosition;
         private Point _floatingSize;
         private DockStyle _dock;
-        private static Dictionary<int, KeyValuePair<Control, Rectangle>> ScissorStack = new Dictionary<int, KeyValuePair<Control, Rectangle>>();
+
+        // private static Dictionary<int, KeyValuePair<Control, Rectangle>> _oldStack = new Dictionary<int, KeyValuePair<Control, Rectangle>>();
+
+        private static Stack<Rectangle> ScissorStack = new Stack<Rectangle>();
+        private static Rectangle currentScissorRect;
 
         /// <summary>
         /// The area
@@ -254,9 +258,9 @@ namespace Squid
             for (int i = 0; i < Elements.Count; i++)
                 Elements[i].UpdateTranslation();
 
-            if (this is IControlContainer)
+            if (IsContainer)
             {
-                ControlCollection controls = ((IControlContainer)this).Controls;
+                ControlCollection controls = LocalContainer.Controls;
 
                 for (int i = 0; i < controls.Count; i++)
                     controls[i].UpdateTranslation();
@@ -308,24 +312,19 @@ namespace Squid
         public bool IsElement { get { return _isElement; } }
 
         /// <summary>
-        /// Returns the depth of the control
-        /// </summary>
-        public int Depth { get; internal set; }
-
-        /// <summary>
         /// Gets/Sets the color used to Tint the used Style
         /// </summary>
         [IntColor]
         [Category("Design")]
         [DefaultValue(-1)]
-        public int Tint { get; set; }
+        public int Tint;// { get; set; }
 
         /// <summary>
         /// Name of the control
         /// </summary>
         [DefaultValue("")]
         [Category("Base")]
-        public string Name { get; set; }
+        public string Name;// { get; set; }
 
         /// <summary>
         /// Opacity of the control
@@ -334,42 +333,42 @@ namespace Squid
         [ValueRange(0, 1)]
         [DefaultValue(1.0f)]
         [Category("Design")]
-        public float Opacity { get; set; }
+        public float Opacity;// { get; set; }
 
         /// <summary>
         /// Gets/Sets the autosize behavior
         /// </summary>
         [DefaultValue(AutoSize.None)]
         [Category("Layout")]
-        public AutoSize AutoSize { get; set; }
+        public AutoSize AutoSize;// { get; set; }
 
         /// <summary>
         /// Gets/Sets whether or not the control processes DragDrop events
         /// </summary>
         [DefaultValue(false)]
         [Category("Behavior")]
-        public bool AllowDrop { get; set; }
+        public bool AllowDrop;// { get; set; }
 
         /// <summary>
         /// Gets/Sets whether or not the control is able to acquire focus
         /// </summary>
         [DefaultValue(false)]
         [Category("Behavior")]
-        public bool AllowFocus { get; set; }
+        public bool AllowFocus;//  { get; set; }
 
         /// <summary>
         /// Gets/Sets whether or not the control prevents the focus to change
         /// </summary>
         [DefaultValue(false)]
         [Category("Behavior")]
-        public bool PreventFocusChange { get; set; }
+        public bool PreventFocusChange;//  { get; set; }
 
         /// <summary>
         /// Gets/Sets whether or not hardware scissor test is used
         /// </summary>
         [DefaultValue(false)]
         [Category("Design")]
-        public bool Scissor { get; set; }
+        public bool Scissor;//  { get; set; }
 
         /// <summary>
         /// Gets/Sets the docking behavior
@@ -396,51 +395,69 @@ namespace Squid
             }
         }
 
+        private static ControlStyle DefaultStyle = new ControlStyle();
+
+        protected ControlStyle LocalStyle = DefaultStyle;
+        private string _style;
+
         /// <summary>
         /// Name of the ControlStyle 
         /// </summary>
         [Style]
         [DefaultValue("")]
         [Category("Design")]
-        public string Style { get; set; }
+        public string Style
+        {
+            get => _style;
+            set
+            {
+                if (_style == value) return;
+                _style = value;
+
+                LocalStyle = DefaultStyle;
+
+                if (Desktop != null)
+                    LocalStyle = Desktop.GetStyle(_style);
+            }
+        }
 
         /// <summary>
         /// Gets/Sets whether or not the control is interactive and processes any events
         /// </summary>
         [Category("Behavior")]
-        public bool NoEvents { get; set; }
+        public bool NoEvents;// { get; set; }
 
         /// <summary>
         /// user defined data object
         /// </summary>
         [XmlIgnore, Hidden]
-        public object Tag { get; set; }
+        public object Tag;// { get; set; }
 
         /// <summary>
         /// user defined data object
         /// </summary>
         [XmlIgnore, Hidden]
-        public object UserData { get; set; }
+        public object UserData;// { get; set; }
 
         /// <summary>
         /// internal data object
         /// </summary>
         [XmlIgnore, Hidden]
-        internal object InternalTag { get; set; }
+        internal object InternalTag;// { get; set; }
 
         /// <summary>
         /// tab index
         /// </summary>
         [DefaultValue(0)]
         [Category("Behavior")]
-        public int TabIndex { get; set; }
+        public int TabIndex;// { get; set; }
 
         /// <summary>
         /// Gets/Sets whether or not the control is visible
         /// </summary>
         [DefaultValue(true)]
         [Category("Base")]
-        public bool Visible { get { return _visible; } set { _visible = value; } }
+        public bool Visible = true;// { get { return _visible; } set { _visible = value; } }
 
         /// <summary>
         /// Returns the parent of the control as IControlContainer
@@ -453,7 +470,7 @@ namespace Squid
         [Cursor]
         [DefaultValue("")]
         [Category("Behavior")]
-        public string Cursor { get; set; }
+        public string Cursor;// { get; set; }
 
         private string _tooltip;
         private string _originalTooltip;
@@ -479,7 +496,7 @@ namespace Squid
         }
 
         [DefaultValue(Alignment.TopCenter)]
-        public Alignment TooltipAlign { get; set; }
+        public Alignment TooltipAlign;
 
         /// <summary>
         /// Returns the z-index
@@ -515,9 +532,9 @@ namespace Squid
 
                 _enabled = value;
 
-                if (this is IControlContainer)
+                if (IsContainer)
                 {
-                    foreach (Control control in ((IControlContainer)this).Controls)
+                    foreach (Control control in LocalContainer.Controls)
                         control.SetEnabled(value);
                 }
 
@@ -545,7 +562,9 @@ namespace Squid
                 }
 
                 if (Container != null)
+                {
                     Container.Controls.Remove(this);
+                }
 
                 if (value is IControlContainer)
                 {
@@ -560,7 +579,7 @@ namespace Squid
         /// </summary>
         [DefaultValue(typeof(Point), "0; 0")]
         [Category("Layout")]
-        public Point MinSize { get; set; }
+        public Point MinSize;
 
         /// <summary>
         /// Gets/Sets the maximum size.
@@ -568,7 +587,7 @@ namespace Squid
         /// </summary>
         [DefaultValue(typeof(Point), "0; 0")]
         [Category("Layout")]
-        public Point MaxSize { get; set; }
+        public Point MaxSize;
 
         /// <summary>
         /// Gets/Sets the size
@@ -601,6 +620,7 @@ namespace Squid
             {
                 if (_position.x == value.x && _position.y == value.y) return;
                 _position = value;
+                newlocation = true;
 
                 if (PositionChanged != null) PositionChanged(this);
 
@@ -662,8 +682,8 @@ namespace Squid
                 _oldState = _state;
                 _state = value;
 
-                Style last =  Desktop.GetStyle(Style).Styles[_oldState];
-                Style next = Desktop.GetStyle(Style).Styles[_state];
+                Style last = LocalStyle.Styles[_oldState];
+                Style next = LocalStyle.Styles[_state];
 
                 TextureFade = last.IsTextureDifferent(next);
                 FontFade = last.IsFontDifferent(next);
@@ -681,7 +701,10 @@ namespace Squid
         /// </summary>
         [DefaultValue(0.0f)]
         [Category("Design")]
-        public float FadeSpeed { get; set; }
+        public float FadeSpeed;// { get; set; }
+
+        private bool newlocation = false;
+        private Point _location;
 
         /// <summary>
         /// Returns the screen position
@@ -690,6 +713,17 @@ namespace Squid
         {
             get
             {
+                if (!newlocation)
+                    return _location;
+
+                newlocation = false;
+                _location = _position;
+
+                if (_parent != null)
+                    _location = _parent.Location + _position;
+
+                return _location;
+
                 if (_parent != null)
                     return _parent.Location + _position;
 
@@ -697,6 +731,8 @@ namespace Squid
             }
         }
 
+        private Desktop _desktop;
+       
         /// <summary>
         /// Returns the root control
         /// </summary>
@@ -704,6 +740,8 @@ namespace Squid
         {
             get
             {
+                return _desktop ?? this as Desktop;
+
                 if (_parent != null)
                     return _parent.Desktop;
                 else
@@ -727,6 +765,9 @@ namespace Squid
         public int AutoId { get; private set; }
 
         private static int AutoIncrement;
+        public bool IsContainer { get; private set; }
+        private IControlContainer LocalContainer;
+        private float FinalOpacity;
 
         /// <summary>
         /// Control ctor
@@ -748,15 +789,56 @@ namespace Squid
             Actions = new GuiActionList(this);
             //Animation = new ControlAnimation(this);
 
-            if (this is IControlContainer)
+            LocalContainer = this as IControlContainer;
+
+            if (LocalContainer != null)
             {
-                ((IControlContainer)this).Controls = new ControlCollection(this);
+                IsContainer = true;
+                LocalContainer.Controls = new ControlCollection(this);
+                LocalContainer.Controls.ItemAdded += Controls_ItemAdded;
             }
+
+            Elements.ItemAdded += Elements_ItemAdded;
+        }
+
+        private void Elements_ItemAdded(object sender, ListEventArgs<Control> e)
+        {
+            if (this is Desktop)
+                e.Item.SetDesktop(this as Desktop);
+            else
+                e.Item.SetDesktop(_desktop);
+        }
+
+        private void Controls_ItemAdded(object sender, ListEventArgs<Control> e)
+        {
+            if(this is Desktop)
+                e.Item.SetDesktop(this as Desktop);
+            else
+                e.Item.SetDesktop(_desktop);
+        }
+
+        void SetDesktop(Desktop desktop)
+        {
+            _desktop = desktop;
+
+            foreach (var child in Elements)
+                child.SetDesktop(desktop);
+
+            if(IsContainer)
+            {
+                foreach (var child in LocalContainer.Controls)
+                    child.SetDesktop(desktop);
+            }
+
+            LocalStyle = DefaultStyle;
+
+            if (Desktop != null)
+                LocalStyle = Desktop.GetStyle(_style);
         }
 
         //protected virtual void Bind(object value)
         //{
-        //    if (this is IControlContainer)
+        //    if (IsContainer)
         //    {
         //        foreach (Control child in ((IControlContainer)this).Controls)
         //            child.Bind(value);
@@ -809,9 +891,9 @@ namespace Squid
 
             Control result = null;
 
-            if (this is IControlContainer)
+            if (IsContainer)
             {
-                foreach (Control child in (this as IControlContainer).Controls)
+                foreach (Control child in LocalContainer.Controls)
                 {
                     result = child.GetControl(name);
                     if (result != null)
@@ -837,9 +919,9 @@ namespace Squid
         {
             List<T> result = new List<T>();
 
-            if (this is IControlContainer)
+            if (IsContainer)
             {
-                foreach (Control child in (this as IControlContainer).Controls)
+                foreach (Control child in LocalContainer.Controls)
                 {
                     if (child is T)
                         result.Add(child as T);
@@ -872,12 +954,11 @@ namespace Squid
             if (!elements && _isElement)
                 found = null;
 
-            if (this is IControlContainer)
+            if (IsContainer)
             {
-                IControlContainer container = this as IControlContainer;
-                for (int i = container.Controls.Count - 1; i >= 0; i--)
+                for (int i = LocalContainer.Controls.Count - 1; i >= 0; i--)
                 {
-                    Control child = container.Controls[i].GetControlAt(x, y, elements);
+                    Control child = LocalContainer.Controls[i].GetControlAt(x, y, elements);
 
                     if (child != null && child.Enabled && child.Visible && !child.NoEvents)
                     {
@@ -927,11 +1008,10 @@ namespace Squid
                     return true;
             }
 
-            IControlContainer container = control as IControlContainer;
-            if (container == null) return false;
-            if (container.Controls.Contains(this)) return true;
+            if (!control.IsContainer) return false;
+            if (control.LocalContainer.Controls.Contains(this)) return true;
 
-            foreach (Control child in container.Controls)
+            foreach (Control child in control.LocalContainer.Controls)
             {
                 if (IsChildOf(child))
                     return true;
@@ -988,13 +1068,23 @@ namespace Squid
         /// </summary>
         public void BringToFront()
         {
-            if (Container == null) return;
-            int index = Container.Controls.IndexOf(this);
-            if (index == Container.Controls.Count - 1) return;
+            if (_parent == null) return;
+            if(_isElement)
+            {
+                var tempparent = _parent;
+                tempparent.Elements.Remove(this);
+                tempparent.Elements.Add(this);
+            }
+            else
+            {
+                if (Container == null) return;
+                int index = Container.Controls.IndexOf(this);
+                if (index == Container.Controls.Count - 1) return;
 
-            Control parent = _parent;
-            Parent = null;
-            Parent = parent;
+                Control parent = _parent;
+                Parent = null;
+                Parent = parent;
+            }
         }
 
         /// <summary>
@@ -1002,13 +1092,24 @@ namespace Squid
         /// </summary>
         public void BringToBack()
         {
-            if (Container == null) return;
-            int index = Container.Controls.IndexOf(this);
-            if (index == 0) return;
+            if (_parent == null) return;
 
-            IControlContainer container = Container;
-            Parent = null;
-            container.Controls.Insert(0, this);
+            if (_isElement)
+            {
+                var tempparent = _parent;
+                tempparent.Elements.Remove(this);
+                tempparent.Elements.Insert(0, this);
+            }
+            else
+            {
+                if (Container == null) return;
+                int index = Container.Controls.IndexOf(this);
+                if (index == 0) return;
+
+                IControlContainer container = Container;
+                Parent = null;
+                container.Controls.Insert(0, this);
+            }
         }
 
         /// <summary>
@@ -1117,7 +1218,7 @@ namespace Squid
         //        }
         //    }
 
-        //    if (this is IControlContainer)
+        //    if (IsContainer)
         //    {
         //        auto = Point.Zero;
         //        ControlCollection controls = ((IControlContainer)this).Controls;
@@ -1207,9 +1308,7 @@ namespace Squid
 
         internal void PerformUpdate()
         {
-            SetDepth();
-
-            if (!_visible) return;
+            if (!Visible) return;
 
             if (FadeSpeed > 0 || Gui.GlobalFadeSpeed > 0)
             {
@@ -1222,15 +1321,15 @@ namespace Squid
                 FadeOut = FadeOut < 0 ? 0 : (FadeOut > 1 ? 1 : FadeOut);
             }
 
+            FinalOpacity = GetOpacity(LocalStyle.Styles[_state].Opacity);
 
             int elementCount = Elements.Count;
             int controlCount = 0;
 
-            IControlContainer iContainer = this as IControlContainer;
-            if (iContainer != null)
+            if (IsContainer)
             {
-                controlCount = iContainer.Controls.Count;
-                iContainer.Controls.IsLocked = true;
+                controlCount = LocalContainer.Controls.Count;
+                LocalContainer.Controls.IsLocked = true;
             }
 
             Elements.IsLocked = true;
@@ -1251,44 +1350,46 @@ namespace Squid
                     Elements[i].PerformUpdate();
 
                 for (int i = 0; i < controlCount; i++)
-                    iContainer.Controls[i].PerformUpdate();
+                    LocalContainer.Controls[i].PerformUpdate();
             }
 
             Elements.IsLocked = false;
             Elements.Cleanup();
 
-            if (iContainer != null)
+            if (IsContainer)
             {
-                iContainer.Controls.IsLocked = false;
-                iContainer.Controls.Cleanup();
+                LocalContainer.Controls.IsLocked = false;
+                LocalContainer.Controls.Cleanup();
             }
 
             if (!IsRemoved)
                 DetermineState();
         }
 
-        /// <summary>
-        /// Performs the layout.
-        /// </summary>
-        public void PerformLayout()
+        public Point GetContentSize()
         {
-            if (!Visible && !Desktop.DesignMode) return;
-
-            PerformLayoutAndClip();
-
-            Point auto = Point.Zero;
+            Point auto = new Point(Padding.Left + Padding.Right, Padding.Top + Padding.Bottom);
             Control child = null;
             int count = Elements.Count;
+            Point childSize, childPosition;
+            Margin childMargin;
 
             for (int i = 0; i < count; i++)
             {
                 child = Elements[i];
-                child.PerformLayout();
+             //   child.PerformLayout();
 
                 if (AutoSize != AutoSize.None && !child.IsRemoved && child.Visible)
                 {
-                    auto.x = Math.Max(auto.x, child.Position.x + child.Size.x + child.Margin.Right);
-                    auto.y = Math.Max(auto.y, child.Position.y + child.Size.y + child.Margin.Bottom);
+                    childPosition = child._position;
+                    childSize = child._size;
+                    childMargin = child._margin;
+
+                    //auto.x = Math.Max(auto.x, childPosition.x + childSize.x + childMargin.Right + child.Margin.Left);
+                    //auto.y = Math.Max(auto.y, childPosition.y + childSize.y + childMargin.Bottom + child.Margin.Top);
+
+                    auto.x += childSize.x + childMargin.Right + child.Margin.Left;
+                    auto.y += childSize.y + childMargin.Bottom + child.Margin.Top;
 
                     //if (i == count - 1)
                     //{
@@ -1301,10 +1402,96 @@ namespace Squid
                 }
             }
 
-            if (this is IControlContainer)
+            if (IsContainer)
+            {
+                auto = new Point(Padding.Left + Padding.Right, Padding.Top + Padding.Bottom);
+                ControlCollection controls = LocalContainer.Controls;
+
+                child = null;
+                count = controls.Count;
+
+                for (int i = 0; i < count; i++)
+                {
+                    child = controls[i];
+                  //  child.PerformLayout();
+
+                    if (AutoSize != AutoSize.None && !child.IsRemoved && child.Visible)
+                    {
+                        childPosition = child._position;
+                        childSize = child._size;
+                        childMargin = child._margin;
+
+                        //auto.x = Math.Max(auto.x, childPosition.x + childSize.x + childMargin.Right + child.Margin.Left);
+                        //auto.y = Math.Max(auto.y, childPosition.y + childSize.y + childMargin.Bottom + child.Margin.Top);
+
+                        auto.x += childSize.x + childMargin.Right + child.Margin.Left;
+                        auto.y += childSize.y + childMargin.Bottom + child.Margin.Top;
+
+                        //if (i == count - 1)
+                        //{
+                        //    if (child.Dock != DockStyle.None)
+                        //    {
+                        //        auto.x += child.Margin.Right;
+                        //        auto.y += child.Margin.Bottom;
+                        //    }
+                        //}
+                    }
+                }
+            }
+
+            return auto;
+        }
+
+        /// <summary>
+        /// Performs the layout.
+        /// </summary>
+        public void PerformLayout()
+        {
+            if (!Visible && !Desktop.DesignMode) return;
+
+            Point pOld = _position;
+            Point sOld = _size;
+
+            newlocation = true;
+
+            PerformLayoutAndClip();
+            OnLayout();
+
+            Point auto = Point.Zero;
+            Control child = null;
+            int count = Elements.Count;
+            Point childSize, childPosition;
+            Margin childMargin;
+
+            for (int i = 0; i < count; i++)
+            {
+                child = Elements[i];
+                child.PerformLayout();
+
+                if (AutoSize != AutoSize.None && !child.IsRemoved && child.Visible)
+                {
+                    childPosition = child._position;
+                    childSize = child._size;
+                    childMargin = child._margin;
+
+                    auto.x = Math.Max(auto.x, childPosition.x + childSize.x + childMargin.Right);
+                    auto.y = Math.Max(auto.y, childPosition.y + childSize.y + childMargin.Bottom);
+
+                    //if (i == count - 1)
+                    //{
+                    //    if (child.Dock != DockStyle.None)
+                    //    {
+                    //        auto.x += child.Margin.Right;
+                    //        auto.y += child.Margin.Bottom;
+                    //    }
+                    //}
+                }
+            }
+
+            if (IsContainer)
             {
                 auto = Point.Zero;
-                ControlCollection controls = ((IControlContainer)this).Controls;
+                ControlCollection controls = LocalContainer.Controls;
 
                 child = null;
                 count = controls.Count;
@@ -1316,8 +1503,12 @@ namespace Squid
 
                     if (AutoSize != AutoSize.None && !child.IsRemoved && child.Visible)
                     {
-                        auto.x = Math.Max(auto.x, child.Position.x + child.Size.x + child.Margin.Right);
-                        auto.y = Math.Max(auto.y, child.Position.y + child.Size.y + child.Margin.Bottom);
+                        childPosition = child._position;
+                        childSize = child._size;
+                        childMargin = child._margin;
+
+                        auto.x = Math.Max(auto.x, childPosition.x + childSize.x + childMargin.Right);
+                        auto.y = Math.Max(auto.y, childPosition.y + childSize.y + childMargin.Bottom);
 
                         //if (i == count - 1)
                         //{
@@ -1356,12 +1547,29 @@ namespace Squid
                 OnAutoSize();
             }
 
-            OnLayout();
+            if (_size.x != sOld.x || _size.y != sOld.y)
+            {
+                if (SizeChanged != null)
+                    SizeChanged(this);
+            }
+
+
+            if (_position.x != pOld.x || _position.y != pOld.y)
+            {
+                if (PositionChanged != null)
+                    PositionChanged(this);
+            }
+
+            //OnLayout();
+
+            //if (_desktop != null)
+            //    _isDirty = false;
 
             //OnLateUpdate();
         }
 
         #endregion
+
 
         // ---------- protected ----------------
 
@@ -1369,11 +1577,21 @@ namespace Squid
         /// Gets the opacity.
         /// </summary>
         /// <returns>System.Single.</returns>
-        public float GetOpacity()
+        //public float GetOpacity()
+        //{
+        //    ControlStyle style = Desktop.GetStyle(Style);
+        //    if (style == null) return 1;
+        //    return GetOpacity(style.Styles[_state].Opacity);
+        //}
+
+
+        private void FinalizeOpacity()
         {
-            ControlStyle style = Desktop.GetStyle(Style);
-            if (style == null) return 1;
-            return GetOpacity(style.Styles[_state].Opacity);
+            ControlStyle style = LocalStyle;
+            if (style == null)
+                FinalOpacity = 1;
+            else
+                FinalOpacity = GetOpacity(style.Styles[_state].Opacity);
         }
 
         /// <summary>
@@ -1384,7 +1602,7 @@ namespace Squid
         protected float GetOpacity(float opacity)
         {
             if (_parent != null)
-                return _parent.GetOpacity() * opacity * Opacity;
+                return _parent.FinalOpacity * opacity * Opacity;
 
             return opacity * Opacity;
         }
@@ -1610,15 +1828,15 @@ namespace Squid
         /// <param name="height"></param>
         protected void SetScissor(int x, int y, int width, int height)
         {
-            Rectangle r = new Rectangle(x, y, width, height);
+            if (ScissorStack.Count == 0)
+                currentScissorRect = Desktop.ClipRect;
 
-            if (ScissorStack.ContainsKey(Depth))
-                ScissorStack[Depth] = new KeyValuePair<Control, Rectangle>(this, r);
-            else
-                ScissorStack.Add(Depth, new KeyValuePair<Control, Rectangle>(this, r));
+            ScissorStack.Push(currentScissorRect);
+
+            currentScissorRect.From(x, y, width, height);
 
             Gui.Renderer.EndBatch(false);
-            Gui.Renderer.Scissor(x, y, r.Width, r.Height);
+            Gui.Renderer.Scissor(x, y, width, height);
             Gui.Renderer.StartBatch();
         }
 
@@ -1629,18 +1847,10 @@ namespace Squid
         {
             Rectangle r = Desktop.ClipRect;
 
-            for (int i = Depth - 1; i >= 0; i--)
-            {
-                if (ScissorStack.ContainsKey(i))
-                {
-                    KeyValuePair<Control, Rectangle> pair = ScissorStack[i];
-                    if (this.IsChildOf(pair.Key))
-                    {
-                        r = pair.Value;
-                        break;
-                    }
-                }
-            }
+            if (ScissorStack.Count > 0)
+                r = ScissorStack.Pop();
+
+            currentScissorRect = r;
 
             Gui.Renderer.EndBatch(false);
             Gui.Renderer.Scissor(r.Left, r.Top, r.Width, r.Height);
@@ -1758,8 +1968,8 @@ namespace Squid
 
             Bounds.Left = _position.x;
             Bounds.Top = _position.y;
-            Bounds.Right = _parent.Size.x - (_position.x + _size.x);
-            Bounds.Bottom = _parent.Size.y - (_position.y + _size.y);
+            Bounds.Right = _parent._size.x - (_position.x + _size.x);
+            Bounds.Bottom = _parent._size.y - (_position.y + _size.y);
         }
 
         protected void PerformLayoutAndClip()
@@ -1773,10 +1983,11 @@ namespace Squid
 
             SetDockRegions();
 
-            ClipRect = new Rectangle(Location, _size);
+            var loc = Location;
+            ClipRect.From(ref loc, ref _size);
 
             if (_parent != null)
-                ClipRect = _parent.ClipRect.Clip(ClipRect);
+                ClipRect.ClipBy(ref _parent.ClipRect);
 
             if (_size.x != s.x || _size.y != s.y)
             {
@@ -1798,116 +2009,130 @@ namespace Squid
             DockAreaE.Bottom = _size.y;
         }
 
+        private ref Rectangle GetDockArea()
+        {
+            if (_isElement) return ref _parent.DockAreaE;
+            return ref _parent.DockAreaC;
+        }
+
         private void LayoutDock()
         {
-            Rectangle rect = _isElement ? _parent.DockAreaE : _parent.DockAreaC;
+            ref Rectangle rect = ref GetDockArea();
+            //ref Rectangle rect = _isElement ? ref _parent.DockAreaE : ref _parent.GetDockAreaC;
 
-            if (Dock == DockStyle.Bottom)
+            int bottom, left, right, top;
+
+            switch(Dock)
             {
-                int bottom = rect.Bottom - _margin.Bottom;
-                int left = rect.Left + _margin.Left;
-                int right = rect.Right - _margin.Right;
+                case DockStyle.Bottom:
+                    bottom = rect.Bottom - _margin.Bottom;
+                    left = rect.Left + _margin.Left;
+                    right = rect.Right - _margin.Right;
 
-                _position.x = left;
-                _position.y = bottom - _size.y;// -_margin.Top;
+                    _position.x = left;
+                    _position.y = bottom - _size.y;// -_margin.Top;
 
-                _size.x = right - left;
-                rect.Bottom = _position.y - _margin.Top;
+                    _size.x = right - left;
+                    rect.Bottom = _position.y - _margin.Top;
+                    break;
+
+                case DockStyle.Fill:
+                    bottom = rect.Bottom - _margin.Bottom;
+                    left = rect.Left + _margin.Left;
+                    right = rect.Right - _margin.Right;
+                    top = rect.Top + _margin.Top;
+
+                    _position.x = left;
+                    _position.y = top;
+
+                    _size.x = right - left;
+                    _size.y = bottom - top;
+                    break;
+
+                case DockStyle.Left:
+                    left = rect.Left + _margin.Left;
+                    top = rect.Top + _margin.Top;
+                    bottom = rect.Bottom - _margin.Bottom;
+
+                    _position.x = left;
+                    _position.y = top;
+
+                    _size.y = bottom - top;
+                    rect.Left = left + _size.x + _margin.Right;
+                    break;
+
+                case DockStyle.Right:
+                    right = rect.Right - _margin.Right;
+                    top = rect.Top + _margin.Top;
+                    bottom = rect.Bottom - _margin.Bottom;
+
+                    _position.x = right - _size.x;
+                    _position.y = top;
+
+                    _size.y = bottom - top;
+                    rect.Right = _position.x - _margin.Left;
+
+                    break;
+
+                case DockStyle.Top:
+
+                    top = rect.Top + _margin.Top;
+                    left = rect.Left + _margin.Left;
+                    right = rect.Right - _margin.Right;
+
+                    _position.x = left;
+                    _position.y = top;
+
+                    _size.x = right - left;
+                    rect.Top = top + _size.y + _margin.Bottom;
+                    break;
+
+                case DockStyle.CenterY:
+                    left = rect.Left + _margin.Left;
+                    right = rect.Right - _margin.Right;
+
+                    _position.x = left;
+
+                    _size.x = right - left;
+                    _position.y = (_parent._size.y - _size.y) / 2;
+                    break;
+
+                case DockStyle.CenterX:
+                    top = rect.Top + _margin.Top;
+                    bottom = rect.Bottom - _margin.Bottom;
+
+                    _position.y = top;
+
+                    _size.y = bottom - top;
+                    _position.x = (_parent._size.x - _size.x) / 2;
+                    break;
+
+                case DockStyle.Center:
+                    _position = (_parent.Size - _size) / 2;
+
+                    break;
+
+                case DockStyle.FillY:
+                    bottom = rect.Bottom - _margin.Bottom;
+                    top = rect.Top + _margin.Top;
+
+                    _position.y = top;
+                    _size.y = bottom - top;
+                    break;
+
+                case DockStyle.FillX:
+                    left = rect.Left + _margin.Left;
+                    right = rect.Right - _margin.Right;
+
+                    _position.x = left;
+                    _size.x = right - left;
+                    break;
             }
-            else if (Dock == DockStyle.Fill)
-            {
-                int bottom = rect.Bottom - _margin.Bottom;
-                int left = rect.Left + _margin.Left;
-                int right = rect.Right - _margin.Right;
-                int top = rect.Top + _margin.Top;
 
-                _position.x = left;
-                _position.y = top;
-
-                _size.x = right - left;
-                _size.y = bottom - top;
-            }
-            else if (Dock == DockStyle.Left)
-            {
-                int left = rect.Left + _margin.Left;
-                int top = rect.Top + _margin.Top;
-                int bottom = rect.Bottom - _margin.Bottom;
-
-                _position.x = left;
-                _position.y = top;
-
-                _size.y = bottom - top;
-                rect.Left = left + _size.x + _margin.Right;
-            }
-            else if (Dock == DockStyle.Right)
-            {
-                int right = rect.Right - _margin.Right;
-                int top = rect.Top + _margin.Top;
-                int bottom = rect.Bottom - _margin.Bottom;
-
-                _position.x = right - _size.x;
-                _position.y = top;
-
-                _size.y = bottom - top;
-                rect.Right = _position.x - _margin.Left;
-            }
-            else if (Dock == DockStyle.Top)
-            {
-                int top = rect.Top + _margin.Top;
-                int left = rect.Left + _margin.Left;
-                int right = rect.Right - _margin.Right;
-
-                _position.x = left;
-                _position.y = top;
-
-                _size.x = right - left;
-                rect.Top = top + _size.y + _margin.Bottom;
-            }
-            else if (Dock == DockStyle.CenterY)
-            {
-                int left = rect.Left + _margin.Left;
-                int right = rect.Right - _margin.Right;
-
-                _position.x = left;
-
-                _size.x = right - left;
-                _position.y = (_parent.Size.y - _size.y) / 2;
-            }
-            else if (Dock == DockStyle.CenterX)
-            {
-                int top = rect.Top + _margin.Top;
-                int bottom = rect.Bottom - _margin.Bottom;
-
-                _position.y = top;
-
-                _size.y = bottom - top;
-                _position.x = (_parent.Size.x - _size.x) / 2;
-            }
-            else if (Dock == DockStyle.Center)
-            {
-                _position = (_parent.Size - _size) / 2;
-            }
-            else if (Dock == DockStyle.FillY)
-            {
-                int bottom = rect.Bottom - _margin.Bottom;
-                int top = rect.Top + _margin.Top;
-
-                _position.y = top;
-                _size.y = bottom - top;
-            }
-            else if (Dock == DockStyle.FillX)
-            {
-                int left = rect.Left + _margin.Left;
-                int right = rect.Right - _margin.Right;
-
-                _position.x = left;
-                _size.x = right - left;
-            }
-
-            if (_isElement)
-                _parent.DockAreaE = rect;
-            else
-                _parent.DockAreaC = rect;
+            //if (_isElement)
+            //    _parent.DockAreaE = rect;
+            //else
+            //    _parent.DockAreaC = rect;
 
             SetBounds();
         }
@@ -1917,46 +2142,103 @@ namespace Squid
             switch (_anchor)
             {
                 case AnchorStyles.Top:
-                    _position.x = _parent.Size.x - Bounds.Right - _size.x;
+                    _position.x = _parent._size.x - Bounds.Right - _size.x;
                     break;
                 case AnchorStyles.Top | AnchorStyles.Left:
                     // position unchanged
                     break;
                 case AnchorStyles.Top | AnchorStyles.Right:
-                    _position.x = _parent.Size.x - Bounds.Right - _size.x;
+                    _position.x = _parent._size.x - Bounds.Right - _size.x;
                     break;
                 case AnchorStyles.Top | AnchorStyles.Bottom:
-                    _size.y = (_parent.Size.y - Bounds.Bottom) - _position.y;
+                    _size.y = (_parent._size.y - Bounds.Bottom) - _position.y;
                     break;
                 case AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left:
-                    _size.y = (_parent.Size.y - Bounds.Bottom) - _position.y;
+                    _size.y = (_parent._size.y - Bounds.Bottom) - _position.y;
                     break;
                 case AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Right:
                     _size.y = (_parent.Size.y - Bounds.Bottom) - _position.y;
-                    _position.x = _parent.Size.x - Bounds.Right - _size.x;
+                    _position.x = _parent._size.x - Bounds.Right - _size.x;
                     break;
                 case AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right:
-                    _size.x = (_parent.Size.x - Bounds.Right) - _position.x;
+                    _size.x = (_parent._size.x - Bounds.Right) - _position.x;
                     break;
                 case AnchorStyles.Left | AnchorStyles.Right:
-                    _size.x = (_parent.Size.x - Bounds.Right) - _position.x;
+                    _size.x = (_parent._size.x - Bounds.Right) - _position.x;
                     break;
                 case AnchorStyles.Bottom | AnchorStyles.Left:
-                    _position.y = _parent.Size.y - Bounds.Bottom - _size.y;
+                    _position.y = _parent._size.y - Bounds.Bottom - _size.y;
                     break;
                 case AnchorStyles.Bottom | AnchorStyles.Right:
-                    _position.x = _parent.Size.x - Bounds.Right - _size.x;
-                    _position.y = _parent.Size.y - Bounds.Bottom - _size.y;
+                    _position.x = _parent._size.x - Bounds.Right - _size.x;
+                    _position.y = _parent._size.y - Bounds.Bottom - _size.y;
                     break;
                 case AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right:
-                    _size.x = (_parent.Size.x - Bounds.Right) - _position.x;
-                    _position.y = _parent.Size.y - Bounds.Bottom - _size.y;
+                    _size.x = (_parent._size.x - Bounds.Right) - _position.x;
+                    _position.y = _parent._size.y - Bounds.Bottom - _size.y;
                     break;
                 case AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right:
-                    _size.x = (_parent.Size.x - Bounds.Right) - _position.x;
-                    _size.y = (_parent.Size.y - Bounds.Bottom) - _position.y;
+                    _size.x = (_parent._size.x - Bounds.Right) - _position.x;
+                    _size.y = (_parent._size.y - Bounds.Bottom) - _position.y;
                     break;
             }
+        }
+
+        private bool NeedsLayout;
+
+        protected void Invalidate() { NeedsLayout = true; }
+
+        internal void DetermineState2()
+        {
+            if (_stateWasSet)
+            {
+                _stateWasSet = false;
+                return;
+            }
+
+            if (NoEvents) return;
+            if (Desktop == null) return;
+
+            // if (root.DesignMode) return;
+
+            if (this is ICheckable && (this as ICheckable).Checked)
+            {
+                if (!Enabled)
+                    State = ControlState.CheckedDisabled;
+                else if (Desktop.FocusedControl == this)
+                    State = ControlState.CheckedFocused;
+                else if (Desktop.PressedControl == this)
+                    State = ControlState.CheckedPressed;
+                else if (Desktop.HotControl == this)
+                    State = ControlState.CheckedHot;
+                else
+                    State = ControlState.Checked;
+            }
+            else if (this is ISelectable && (this as ISelectable).Selected)
+            {
+                if (!Enabled)
+                    State = ControlState.SelectedDisabled;
+                else if (Desktop.FocusedControl == this)
+                    State = ControlState.SelectedFocused;
+                else if (Desktop.PressedControl == this)
+                    State = ControlState.SelectedPressed;
+                else if (Desktop.HotControl == this)
+                    State = ControlState.SelectedHot;
+                else
+                    State = ControlState.Selected;
+            }
+            else if (!Enabled)
+                State = ControlState.Disabled;
+            else if (Desktop.FocusedControl == this)
+                State = ControlState.Focused;
+            else if (Desktop.PressedControl == this)
+                State = ControlState.Pressed;
+            else if (Desktop.HotControl == this)
+                State = ControlState.Hot;
+            else
+                State = ControlState.Default;
+
+            _stateWasSet = false;
         }
 
         private void DetermineState()
@@ -2014,13 +2296,12 @@ namespace Squid
 
         private void DrawChildren()
         {
-            if (this is IControlContainer)
+            if (IsContainer)
             {
-                IControlContainer ccont = this as IControlContainer;
                 //ccont.Controls.Cleanup();
 
-                for (int i = 0; i < ccont.Controls.Count; i++)
-                    ccont.Controls[i].Draw();
+                for (int i = 0; i < LocalContainer.Controls.Count; i++)
+                    LocalContainer.Controls[i].Draw();
             }
         }
 
@@ -2329,9 +2610,9 @@ namespace Squid
 
             _parentEnabled = value;
 
-            if (this is IControlContainer)
+            if (IsContainer)
             {
-                foreach (Control control in ((IControlContainer)this).Controls)
+                foreach (Control control in LocalContainer.Controls)
                     control.SetEnabled(value);
             }
 
@@ -2351,89 +2632,78 @@ namespace Squid
             for (int i = 0; i < Elements.Count; i++)
                 Elements[i].PerformLateUpdate();
 
-            if (this is IControlContainer)
+            if (IsContainer)
             {
-                IControlContainer ccont = this as IControlContainer;
-                for (int i = 0; i < ccont.Controls.Count; i++)
-                    ccont.Controls[i].PerformLateUpdate();
+                for (int i = 0; i < LocalContainer.Controls.Count; i++)
+                    LocalContainer.Controls[i].PerformLateUpdate();
             }
-        }
-
-        internal void SetDepth()
-        {
-            if (_parent != null)
-                Depth = _parent.Depth + 1;
         }
 
         internal void Draw()
         {
-            if (_visible)
+            if (!Visible) return;
+
+            if (_size.x <= 0 || _size.y <= 0)
+                return;
+
+            if (ClipRect.Width <= 0 || ClipRect.Height <= 0)
+                return;
+
+            DrawBefore();
+
+            if (Scissor || Gui.AlwaysScissor)
+                SetScissor(Math.Max(0, ClipRect.Left), Math.Max(0, ClipRect.Top), ClipRect.Width, ClipRect.Height);
+
+            if (FadeSpeed > 0 || Gui.GlobalFadeSpeed > 0)
             {
-                if (_size.x <= 0 || _size.y <= 0)
-                    return;
+                Style next = LocalStyle.Styles[_state];
+                float opacity = GetOpacity(next.Opacity);
 
-                if (ClipRect.Width <= 0 || ClipRect.Height <= 0)
-                    return;
-
-                DrawBefore();
-
-                if (Scissor || Gui.AlwaysScissor)
-                    SetScissor(Math.Max(0, ClipRect.Left), Math.Max(0, ClipRect.Top), ClipRect.Width, ClipRect.Height);
-
-                if (FadeSpeed > 0 || Gui.GlobalFadeSpeed > 0)
+                if (_oldState != _state && FadeIn < 1 && (TextureFade || FontFade))
                 {
-                    Style next = Desktop.GetStyle(Style).Styles[_state];
-                    float opacity = GetOpacity(next.Opacity);
+                    Style last = LocalStyle.Styles[_oldState];
 
-                    if (_oldState != _state && FadeIn < 1 && (TextureFade || FontFade))
+                    float a1 = GetOpacity(last.Opacity) * FadeOut;
+                    float a2 = GetOpacity(next.Opacity) * FadeIn;
+
+                    if (TextureFade)
                     {
-                        Style last = Desktop.GetStyle(Style).Styles[_oldState];
-
-                        float a1 = GetOpacity(last.Opacity) * FadeOut;
-                        float a2 = GetOpacity(next.Opacity) * FadeIn;
-
-                        if (TextureFade)
-                        {
-                            if (FadeOut > 0) DrawStyle(last, a1);
-                            DrawStyle(next, a2);
-                        }
-                        else
-                            DrawStyle(next, opacity);
-
-                        if (FontFade)
-                        {
-                            if (FadeOut > 0) DrawText(last, a1);
-                            DrawText(next, a2);
-                        }
-                        else
-                            DrawText(next, opacity);
+                        if (FadeOut > 0) DrawStyle(last, a1);
+                        DrawStyle(next, a2);
                     }
                     else
-                    {
                         DrawStyle(next, opacity);
-                        DrawText(next, opacity);
+
+                    if (FontFade)
+                    {
+                        if (FadeOut > 0) DrawText(last, a1);
+                        DrawText(next, a2);
                     }
+                    else
+                        DrawText(next, opacity);
                 }
                 else
                 {
-                    Style style = Desktop.GetStyle(Style).Styles[_state];
-                    float opacity = GetOpacity(style.Opacity);
-
-                    DrawStyle(style, opacity);
-                    DrawText(style, opacity);
+                    DrawStyle(next, opacity);
+                    DrawText(next, opacity);
                 }
+            }
+            else
+            {
+                Style style = LocalStyle.Styles[_state];
+                float opacity = GetOpacity(style.Opacity);
 
-                DrawChildren();
-                DrawElements();
-
-                if (Scissor || Gui.AlwaysScissor)
-                    ResetScissor();
-
-                DrawCustom();
+                DrawStyle(style, opacity);
+                DrawText(style, opacity);
             }
 
-            if (Depth == 1 && ScissorStack.Count > 0)
-                ScissorStack.Clear();
+            DrawChildren();
+            DrawElements();
+
+            if (Scissor || Gui.AlwaysScissor)
+                ResetScissor();
+
+            DrawCustom();
         }
 
         internal void DoKeyEvents()
@@ -2479,6 +2749,8 @@ namespace Squid
             }
         }
 
+        private Point pointDown;
+
         internal void DoEvents()
         {
             if (NoEvents) return;
@@ -2487,38 +2759,34 @@ namespace Squid
             if (Gui.MouseScroll != 0)
                 OnMouseWheel();
 
-            for (int i = 0; i < Gui.Buttons.Length; i++)
+            var count = Gui.Buttons.Length;
+            for (int i = 0; i < count; i++)
             {
-                if (Gui.GetButton(i) == ButtonState.Down)
-                {
-                    _isMouseDrag = false;
-                    OnMouseDown(i);
-                    return;
-                }
-                else if (Gui.GetButton(i) == ButtonState.Press)
-                {
-                    OnMousePress(i);
+                var state = Gui.GetButton(i);
 
-                    if (!Gui.MouseMovement.IsEmpty && !_isMouseDrag)
-                    {
-                        _isMouseDrag = true;
-                        OnMouseDrag(i);
-                    }
+                switch(state)
+                {
+                    case ButtonState.Down:
+                        _isMouseDrag = false;
+                        OnMouseDown(i);
+                        pointDown = Gui.MousePosition;
+                        return;
 
-                    return;
-                }
-                else if (Gui.GetButton(i) == ButtonState.Up)
-                {
-                    OnMouseRelease(i);
-                    return;
-                }
-                else if (i == 0)
-                {
-                    //if (Desktop != null)
-                    //{
-                    //    Desktop.PressedControl = null;
-                    //    Desktop.MouseDownControl = null;
-                    //}
+                    case ButtonState.Press:
+                        OnMousePress(i);
+                        var mp = pointDown - Gui.MousePosition;
+                        bool isdrag = ((mp.x * mp.x) + (mp.y * mp.y)) > (Gui.DragThreshold * Gui.DragThreshold);
+
+                        if (isdrag && !_isMouseDrag)
+                        {
+                            _isMouseDrag = true;
+                            OnMouseDrag(i);
+                        }
+                        return;
+
+                    case ButtonState.Up:
+                        OnMouseRelease(i);
+                        return;
                 }
             }
 
@@ -2536,14 +2804,13 @@ namespace Squid
 
             Control found = null;
 
-            if (this is IControlContainer)
+            if (IsContainer)
             {
                 found = this;
 
-                IControlContainer container = this as IControlContainer;
-                for (int i = container.Controls.Count - 1; i >= 0; i--)
+                for (int i = LocalContainer.Controls.Count - 1; i >= 0; i--)
                 {
-                    Control child = container.Controls[i].PickDeep(x, y);
+                    Control child = LocalContainer.Controls[i].PickDeep(x, y);
 
                     if (child != null && child.Visible)
                     {
@@ -2574,12 +2841,11 @@ namespace Squid
 
             Control found = _isElement ? null : this;
 
-            if (this is IControlContainer)
+            if (IsContainer)
             {
-                IControlContainer container = this as IControlContainer;
-                for (int i = container.Controls.Count - 1; i >= 0; i--)
+                for (int i = LocalContainer.Controls.Count - 1; i >= 0; i--)
                 {
-                    Control child = container.Controls[i].PickFirst(x, y);
+                    Control child = LocalContainer.Controls[i].PickFirst(x, y);
 
                     if (child != null && child.Visible && !child._isElement)
                     {
@@ -2593,7 +2859,7 @@ namespace Squid
             {
                 Control child = Elements[i].PickFirst(x, y);
 
-                if (child != null && child.Visible && !(child is IControlContainer))
+                if (child != null && child.Visible && !child.IsContainer)
                 {
                     found = child;
                     break;
@@ -2614,14 +2880,14 @@ namespace Squid
 
             Control found = Enabled && Visible && AllowDrop ? this : null;
 
-            if (this is IControlContainer)
+            if (IsContainer)
             {
-                IControlContainer container = this as IControlContainer;
-                for (int i = container.Controls.Count - 1; i >= 0; i--)
+                for (int i = LocalContainer.Controls.Count - 1; i >= 0; i--)
                 {
-                    Control child = container.Controls[i].GetDropTarget(sender);
+                    Control child = LocalContainer.Controls[i].GetDropTarget(sender);
+                    if (child == null) continue;
 
-                    if (child != null && sender != child && child.Enabled && child.Visible && !child.NoEvents && child.AllowDrop)
+                    if (sender != child && child.Enabled && child.Visible && !child.NoEvents && child.AllowDrop)
                     {
                         found = child;
                         break;
@@ -2632,8 +2898,9 @@ namespace Squid
             for (int i = Elements.Count - 1; i >= 0; i--)
             {
                 Control child = Elements[i].GetDropTarget(sender);
+                if (child == null) continue;
 
-                if (child != null && sender != child && child.Enabled && child.Visible && !child.NoEvents && child.AllowDrop)
+                if (sender != child && child.Enabled && child.Visible && !child.NoEvents && child.AllowDrop)
                 {
                     found = child;
                     break;
@@ -2665,9 +2932,9 @@ namespace Squid
                 }
             }
 
-            if (this is IControlContainer)
+            if (IsContainer)
             {
-                controls = ((IControlContainer)this).Controls;
+                controls = LocalContainer.Controls;
 
                 for (int i = 0; i < controls.Count; i++)
                 {
@@ -2703,9 +2970,9 @@ namespace Squid
                     index = result;
             }
 
-            if (this is IControlContainer)
+            if (IsContainer)
             {
-                all = ((IControlContainer)this).Controls;
+                all = LocalContainer.Controls;
 
                 for (int i = 0; i < all.Count; i++)
                 {

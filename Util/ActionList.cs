@@ -79,7 +79,8 @@ namespace Squid
 
         public void Clear()
         {
-            Actions.Clear();
+            if(Actions.Count > 0)
+                Actions.Clear();
         }
 
         public GuiAction Add(GuiAction action)
@@ -111,6 +112,9 @@ namespace Squid
 
         public void Update(float dt)
         {
+            if (Actions.Count == 0)
+                return;
+
             IsUpdating = true;
 
             index = 0;

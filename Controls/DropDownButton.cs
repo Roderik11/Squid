@@ -19,6 +19,7 @@ namespace Squid
         /// </summary>
         /// <value>The align.</value>
         public Alignment Align { get; set; }
+
         /// <summary>
         /// Gets or sets a value indicating whether [hot drop].
         /// </summary>

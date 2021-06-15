@@ -39,21 +39,21 @@ namespace Squid
         /// user data
         /// </summary>
         [Hidden, XmlIgnore]
-        public object Tag { get; set; }
+        public object Tag;// { get; set; }
 
         /// <summary>
         /// color for any text to be drawn (argb)
         /// </summary>
         [IntColor]
         [Category("Text")]
-        public int TextColor { get; set; }
+        public int TextColor;// { get; set; }
 
         /// <summary>
         /// name of the font to use for text
         /// </summary>
         [Font]
         [Category("Text")]
-        public string Font { get; set; }
+        public string Font;// { get; set; }
 
         /// <summary>
         /// text padding (distance to control borders)
@@ -65,53 +65,53 @@ namespace Squid
         /// text alignment
         /// </summary>
         [Category("Text")]
-        public Alignment TextAlign { get; set; }
+        public Alignment TextAlign;// { get; set; }
 
         /// <summary>
         /// color to tint the texture (argb)
         /// </summary>
         [IntColor]
         [Category("Graphics")]
-        public int Tint { get; set; }
+        public int Tint;// { get; set; }
 
         /// <summary>
         /// background color (argb)
         /// </summary>
         [IntColor]
         [Category("Graphics")]
-        public int BackColor { get; set; }
+        public int BackColor;// { get; set; }
 
         /// <summary>
         /// opacity (0-1)
         /// </summary>
         [ValueRange(0, 1)]
         [Category("Graphics")]
-        public float Opacity { get; set; }
+        public float Opacity;// { get; set; }
 
         /// <summary>
         /// name of the texture to draw
         /// </summary>
         [Texture]
         [Category("Graphics")]
-        public string Texture { get; set; }
+        public string Texture;// { get; set; }
 
         /// <summary>
         /// source rectangle of the texture expressed in pixels
         /// </summary>
         [Category("Graphics")]
-        public Rectangle TextureRect { get; set; }
+        public Rectangle TextureRect;// { get; set; }
 
         /// <summary>
         /// describes the 9sclice texture regions expressed as margin
         /// </summary>
         [Category("Graphics")]
-        public Margin Grid { get; set; }
+        public Margin Grid;// { get; set; }
 
         /// <summary>
         /// enables/disables the 9sclice grid
         /// </summary>
         [Category("Graphics")]
-        public TextureMode Tiling { get; set; }
+        public TextureMode Tiling;// { get; set; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Style"/> class.

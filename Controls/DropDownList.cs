@@ -172,8 +172,10 @@ namespace Squid
 
             if (!WasOpenOnce)
             {
+                var autosize = Listbox.ItemContainer.GetContentSize();
+
                 if (DropdownAutoSize)
-                    Dropdown.Size = new Point(Size.x, DropdownSize.y);
+                    Dropdown.Size = new Point(Size.x, autosize.y + 2);
                 else
                     Dropdown.Size = new Point(DropdownSize.x, DropdownSize.y);
 

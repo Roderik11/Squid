@@ -62,6 +62,16 @@ namespace Squid
             Refresh();
         }
 
+        protected override void OnAutoSize()
+        {
+            switch(FlowDirection)
+            {
+                case FlowDirection.LeftToRight:
+                    Size = new Point(Size.x, Size.y + VSpacing);
+                    break;
+            }
+        }
+
         private void LayoutLeftToRight()
         {
             int x = HSpacing;

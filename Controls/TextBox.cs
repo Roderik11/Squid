@@ -213,7 +213,7 @@ namespace Squid
             Style = "textbox";
             _text = string.Empty;
             AllowFocus = true;
-            Cursor = CursorNames.Select;
+            Cursor = Cursors.Select;
 
             MouseDown += TextBox_MouseDown;
             MousePress += TextBox_MousePress;
@@ -263,7 +263,7 @@ namespace Squid
             if (args.Button > 0) return;
             if (Gui.CtrlPressed) return;
 
-            Style style = Desktop.GetStyle(Style).Styles[State];
+            Style style = LocalStyle.Styles[State];
 
             string masked = Text;
             if (IsPassword)
@@ -315,7 +315,7 @@ namespace Squid
                 HasFocus = true;
             }
 
-            Style style = Desktop.GetStyle(Style).Styles[State];
+            Style style = LocalStyle.Styles[State];
 
             string masked = Text;
             if (IsPassword)
@@ -369,8 +369,7 @@ namespace Squid
             }
             else
             {
-                SelectStart = Caret;
-                SelectEnd = Caret;
+                SelectStart = SelectEnd = Caret;
             }
         }
 
@@ -735,7 +734,10 @@ namespace Squid
                             char c = args.Char.Value;
 
                             if (Mode == TextBoxMode.Numeric)
-                                valid = char.IsNumber(c) || char.IsDigit(c) || (c.ToString() == ".") || (c.ToString() == ",");
+                            {
+                                //valid = Double.TryParse(Text + c, out double result);
+                                valid = char.IsNumber(c) || char.IsDigit(c) || c == '.' || c == ',' || c == '-' || c == 'e';
+                            }
 
                             if (valid)
                             {
@@ -847,7 +849,7 @@ namespace Squid
                     Point size1 = Gui.Renderer.GetTextSize(text, font);
                     Point size2 = Gui.Renderer.GetTextSize(text2, font);
 
-                    Gui.Renderer.DrawBox(p.x + size1.x, p.y, size2.x, size2.y, ColorInt.FromArgb(opacity, color));
+                    Gui.Renderer.DrawBox(p.x + size1.x, p.y, size2.x + 2, size2.y, ColorInt.FromArgb(opacity, color));
                 }
             }
             else

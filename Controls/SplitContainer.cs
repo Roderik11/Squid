@@ -80,7 +80,7 @@ namespace Squid
             SplitButton.Size = new Point(10, 10);
             SplitButton.MousePress += SplitButton_MousePress;
             SplitButton.MouseDown += SplitButton_MouseDown;
-            SplitButton.Cursor = CursorNames.VSplit;
+            SplitButton.Cursor = Cursors.VSplit;
             Elements.Add(SplitButton);
 
             SplitFrame2 = new Frame();
@@ -100,14 +100,14 @@ namespace Squid
                 SplitFrame1.Dock = DockStyle.Left;
                 SplitButton.Size = new Point(SplitButton.Size.y, 10);
                 SplitButton.Dock = DockStyle.Left;
-                SplitButton.Cursor = CursorNames.VSplit;
+                SplitButton.Cursor = Cursors.VSplit;
             }
             else
             {
                 SplitFrame1.Dock = DockStyle.Top;
                 SplitButton.Size = new Point(10, SplitButton.Size.x);
                 SplitButton.Dock = DockStyle.Top;
-                SplitButton.Cursor = CursorNames.HSplit;
+                SplitButton.Cursor = Cursors.HSplit;
             }
         }
 

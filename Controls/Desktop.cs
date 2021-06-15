@@ -234,8 +234,8 @@ namespace Squid
             if (Skin == null)
                 return DefaultStyle;
 
-            if (Skin.ContainsKey(name))
-                return Skin[name];
+            if (Skin.TryGetValue(name, out var result))
+                return result;
 
             return DefaultStyle;
         }
@@ -636,6 +636,8 @@ namespace Squid
         private List<Window> ModalQueue = new List<Window>();
         private Window window;
 
+        public event DragDropEvent DragDropEnded;
+
         private void EndDragDrop()
         {
             if (!IsDragging) return;
@@ -660,6 +662,8 @@ namespace Squid
                 dropTarget.OnDragDrop(DragDropArgs);
             else
                 OnDragDrop(DragDropArgs);
+
+            DragDropEnded?.Invoke(this, DragDropArgs);
         }
 
         private void ProcessDragDrop()
@@ -702,6 +706,12 @@ namespace Squid
             }
             else
             {
+                if (dropTarget != null)
+                {
+                    DragDropArgs.Cancel = false;
+                    dropTarget.OnDragLeave(DragDropArgs);
+                }
+
                 Controls.Remove(DragData);
                 DragData = null;
                 dropTarget = null;

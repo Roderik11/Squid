@@ -10,12 +10,10 @@ namespace Squid
     /// <summary>
     /// Struct Point
     /// </summary>
-    [TypeConverter(typeof(PointConverter))]
+    [TypeConverter(typeof(PointTypeConverter))]
     public struct Point
     {
         public static readonly Point Zero;
-        private int _x;
-        private int _y;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Point"/> struct.
@@ -23,8 +21,8 @@ namespace Squid
         /// <param name="pt">The pt.</param>
         public Point(Point pt)
         {
-            this._x = pt.x;
-            this._y = pt.y;
+            this.x = pt.x;
+            this.y = pt.y;
         }
 
         /// <summary>
@@ -34,8 +32,8 @@ namespace Squid
         /// <param name="y">The y.</param>
         public Point(int x, int y)
         {
-            this._x = x;
-            this._y = y;
+            this.x = x;
+            this.y = y;
         }
 
         /// <summary>
@@ -133,28 +131,20 @@ namespace Squid
         [Browsable(false)]
         public bool IsEmpty
         {
-            get { return ((_x == 0) && (_y == 0)); }
+            get { return ((x == 0) && (y == 0)); }
         }
 
         /// <summary>
         /// Gets or sets the x.
         /// </summary>
         /// <value>The x.</value>
-        public int x
-        {
-            get { return _x; }
-            set { _x = value; }
-        }
+        public int x;
 
         /// <summary>
         /// Gets or sets the y.
         /// </summary>
         /// <value>The y.</value>
-        public int y
-        {
-            get { return _y; }
-            set { _y = value; }
-        }
+        public int y;
 
         /// <summary>
         /// Determines whether the specified <see cref="System.Object" /> is equal to this instance.
@@ -167,7 +157,7 @@ namespace Squid
                 return false;
 
             Point size = (Point)obj;
-            return ((size._x == this._x) && (size._y == this._y));
+            return ((size.x == this.x) && (size.y == this.y));
         }
 
         /// <summary>
@@ -176,7 +166,7 @@ namespace Squid
         /// <returns>A hash code for this instance, suitable for use in hashing algorithms and data structures like a hash table.</returns>
         public override int GetHashCode()
         {
-            return (this._x ^ this._y);
+            return (this.x ^ this.y);
         }
 
         /// <summary>
@@ -209,10 +199,7 @@ namespace Squid
         }
     }
 
-    /// <summary>
-    /// Converts from String to Point and vice versa.
-    /// </summary>
-    public class PointConverter : TypeConverter
+    public class PointTypeConverter : TypeConverter
     {
         // Methods
         /// <summary>

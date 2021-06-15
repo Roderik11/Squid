@@ -168,11 +168,11 @@ namespace Squid
                 Frame = new Frame { Dock = DockStyle.Left, AutoSize = AutoSize.Vertical, Scissor = true };
                 Header = new Frame { Dock = DockStyle.Left, Scissor = true };
 
-                FrameHandle = new Button { Size = new Point(4, 4), Dock = DockStyle.Right, Cursor = CursorNames.VSplit };
+                FrameHandle = new Button { Size = new Point(4, 4), Dock = DockStyle.Right, Cursor = Cursors.VSplit };
                 FrameHandle.MouseDown += Handle_MouseDown;
                 FrameHandle.MousePress += Handle_MousePress;
 
-                HeaderHandle = new Button { Size = new Point(4, 4), Dock = DockStyle.Right, Cursor = CursorNames.VSplit };
+                HeaderHandle = new Button { Size = new Point(4, 4), Dock = DockStyle.Right, Cursor = Cursors.VSplit };
                 HeaderHandle.MouseDown += Handle_MouseDown;
                 HeaderHandle.MousePress += Handle_MousePress;
 

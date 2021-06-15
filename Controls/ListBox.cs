@@ -30,7 +30,7 @@ namespace Squid
     public class ListBox : Control
     {
         private bool skipEvents;
-        private Frame ItemContainer;
+        private Frame itemContainer;
         private ListBoxItem _selectedItem;
         private ActiveList<ListBoxItem> _selected = new ActiveList<ListBoxItem>();
 
@@ -55,6 +55,8 @@ namespace Squid
         /// </summary>
         /// <value>The clip frame.</value>
         public Frame ClipFrame { get; private set; }
+
+        public Frame ItemContainer { get { return itemContainer; } }
 
         /// <summary>
         /// Gets or sets the items.
@@ -160,9 +162,9 @@ namespace Squid
             ClipFrame.Scissor = true;
             Elements.Add(ClipFrame);
 
-            ItemContainer = new Frame();
-            ItemContainer.AutoSize = AutoSize.Vertical;
-            ClipFrame.Controls.Add(ItemContainer);
+            itemContainer = new Frame();
+            itemContainer.AutoSize = AutoSize.Vertical;
+            ClipFrame.Controls.Add(itemContainer);
 
             _selected.BeforeItemAdded += _selected_BeforeItemAdded;
             _selected.ItemAdded += _selected_ItemAdded;
@@ -226,19 +228,19 @@ namespace Squid
         protected override void OnUpdate()
         {
             // force the width to be that of its parent
-            ItemContainer.Size = new Point(ClipFrame.Size.x, ItemContainer.Size.y);
+            itemContainer.Size = new Point(ClipFrame.Size.x, itemContainer.Size.y);
 
             // move the label up/down using the scrollbar value
-            if (ItemContainer.Size.y < ClipFrame.Size.y) // no need to scroll
+            if (itemContainer.Size.y <= ClipFrame.Size.y) // no need to scroll
             {
                 Scrollbar.Visible = false; // hide scrollbar
-                ItemContainer.Position = new Point(0, 0); // set fixed position
+                itemContainer.Position = new Point(0, 0); // set fixed position
             }
             else
             {
-                Scrollbar.Scale = Math.Min(1, (float)Size.y / (float)ItemContainer.Size.y);
+                Scrollbar.Scale = Math.Min(1, (float)Size.y / (float)itemContainer.Size.y);
                 Scrollbar.Visible = true; // show scrollbar
-                ItemContainer.Position = new Point(0, (int)((ClipFrame.Size.y - ItemContainer.Size.y) * Scrollbar.EasedValue));
+                itemContainer.Position = new Point(0, (int)((ClipFrame.Size.y - itemContainer.Size.y) * Scrollbar.EasedValue));
             }
 
             if (Scrollbar.ShowAlways)
@@ -252,15 +254,15 @@ namespace Squid
 
         void Items_ItemsSorted(object sender, EventArgs e)
         {
-            ItemContainer.Controls.Clear();
+            itemContainer.Controls.Clear();
 
             foreach (ListBoxItem item in Items)
-                ItemContainer.Controls.Add(item);
+                itemContainer.Controls.Add(item);
         }
 
         void Items_ItemRemoved(object sender, ListEventArgs<ListBoxItem> e)
         {
-            ItemContainer.Controls.Clear();
+            itemContainer.Controls.Clear();
 
             if (e.Item.Selected)
             {
@@ -275,12 +277,12 @@ namespace Squid
             e.Item.SelectedChanged -= Item_SelectedChanged;
 
             foreach (ListBoxItem item in Items)
-                ItemContainer.Controls.Add(item);
+                itemContainer.Controls.Add(item);
         }
 
         void Items_ItemAdded(object sender, ListEventArgs<ListBoxItem> e)
         {
-            ItemContainer.Controls.Clear();
+            itemContainer.Controls.Clear();
 
             if (e.Item.Selected)
             {
@@ -294,7 +296,7 @@ namespace Squid
             e.Item.SelectedChanged += Item_SelectedChanged;
 
             foreach (ListBoxItem item in Items)
-                ItemContainer.Controls.Add(item);
+                itemContainer.Controls.Add(item);
         }
 
         void Item_SelectedChanged(Control sender)
@@ -330,7 +332,7 @@ namespace Squid
             }
             skipEvents = false;
 
-            ItemContainer.Controls.Clear();
+            itemContainer.Controls.Clear();
         }
 
         void item_MouseClick(Control sender, MouseEventArgs args)

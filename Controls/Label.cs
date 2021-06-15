@@ -689,16 +689,27 @@ namespace Squid
         {
             if (IsDirty)
             {
-                Style style = Desktop.GetStyle(Style).Styles[State];
+                Style style = LocalStyle.Styles[State];
                 UpdateText(style);
             }
 
             if (AutoSize == Squid.AutoSize.Vertical)
-                Size = new Point(Size.x, TextSize.y);
+            {
+                int h = MinSize.y > 0 ? Math.Max(MinSize.y, TextSize.y) : TextSize.y;
+                Size = new Point(Size.x, h);
+            }
             else if (AutoSize == Squid.AutoSize.Horizontal)
-                Size = new Point(TextSize.x, Size.y);
+            {
+                int w = MinSize.x > 0 ? Math.Max(MinSize.x, TextSize.x) : TextSize.x;
+                Size = new Point(w, Size.y);
+            }
             else if (AutoSize == Squid.AutoSize.HorizontalVertical)
-                Size = TextSize;
+            {
+                int h = MinSize.y > 0 ? Math.Max(MinSize.y, TextSize.y) : TextSize.y;
+                int w = MinSize.x > 0 ? Math.Max(MinSize.x, TextSize.x) : TextSize.x;
+
+                Size = new Point(w, h);
+            }
         }
 
         protected override void OnLateUpdate()
@@ -708,7 +719,7 @@ namespace Squid
 
             if (IsDirty)
             {
-                Style style = Desktop.GetStyle(Style).Styles[State];
+                Style style = LocalStyle.Styles[State];
                 UpdateText(style);
             }
 
@@ -725,7 +736,7 @@ namespace Squid
 
                         if (element.Rectangle.Contains(m))
                         {
-                            Desktop.CurrentCursor = CursorNames.Link;
+                            Desktop.CurrentCursor = Cursors.Link;
                             ActiveHref = element.Href;
                             break;
                         }
