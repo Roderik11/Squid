@@ -13,6 +13,13 @@ SQUID does not depend on a certain rendering engine, you can use it with any eng
 
 All you need to do is to implement a single interface - the ISquidRenderer.
 
+### Example Screenshots
+
+![image](https://user-images.githubusercontent.com/5743257/122032701-2b671680-cdd0-11eb-830d-299888acdbae.png)
+
+![image](https://user-images.githubusercontent.com/5743257/122033159-91ec3480-cdd0-11eb-805f-37738eb6839c.png)
+
+
 ### Features:
 
 - scale9 texture grid
