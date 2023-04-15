@@ -13,6 +13,8 @@ SQUID does not depend on a certain rendering engine, you can use it with any eng
 
 All you need to do is to implement a single interface - the ISquidRenderer.
 
+https://github.com/Roderik11/Squid/wiki/Using-Squid
+
 ### Example Screenshots
 
 ###### Sample Arrangment
