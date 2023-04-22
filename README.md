@@ -17,7 +17,7 @@ https://github.com/Roderik11/Squid/wiki/Using-Squid
 
 ### Example Screenshots
 
-###### Sample Arrangment
+###### Sample Arrangement
 ![image](https://user-images.githubusercontent.com/5743257/122032701-2b671680-cdd0-11eb-830d-299888acdbae.png "Sample Arrangement")
 ###### Custom Game Engine
 ![image](https://user-images.githubusercontent.com/5743257/122033159-91ec3480-cdd0-11eb-805f-37738eb6839c.png "Custom Game Engine")
