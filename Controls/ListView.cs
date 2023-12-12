@@ -555,31 +555,18 @@ namespace Squid
                 return "no aspect";
 
             Type type = item.GetType();
-            System.Reflection.MemberInfo[] infos = type.GetMember(column.Aspect);
+            var infos = type.GetMember(column.Aspect);
             if (infos.Length == 0) return "not found";
-            System.Reflection.MemberInfo member = infos[0];
+            var member = infos[0];
 
-            object value = null;
-
-            if (member is FieldInfo)
-            {
-                value = ((FieldInfo)member).GetValue(item);
-                return string.Format("{0}", value);
-            }
-            else if (member is PropertyInfo)
-            {
-                value = ((PropertyInfo)member).GetValue(item, null);
-                return string.Format("{0}", value);
-            }
-            else if (member is MethodInfo)
-            {
-                value = ((MethodInfo)member).Invoke(item, null);
-                return string.Format("{0}", value);
-            }
-            else
-            {
-                return "not a member";
-            }
+            if (member is FieldInfo fieldInfo)
+                return string.Format("{0}", fieldInfo.GetValue(item));
+            if (member is PropertyInfo propertyInfo)
+                return string.Format("{0}", propertyInfo.GetValue(item, null));
+            if (member is MethodInfo methodInfo)
+                return string.Format("{0}", methodInfo.Invoke(item, null));
+             
+            return "not a member";
         }
     }
 }

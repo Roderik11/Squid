@@ -327,15 +327,11 @@ namespace Squid
             if (font < 0) return;
 
             Point p = Gui.MousePosition - Location;
-            Point s1 = Gui.Renderer.GetTextSize(masked, font);
-            int carex = p.x + Offset + s1.x;
+
             int x = 0;
-
-            string text = string.Empty;
-
             for (int i = 1; i <= masked.Length; i++)
             {
-                text = masked.Substring(0, i);
+                string text = masked.Substring(0, i);
                 x = Offset + Gui.Renderer.GetTextSize(text, font).x;
                 if (x > p.x)
                 {

@@ -2,13 +2,14 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Runtime.InteropServices;
+using System.Collections.ObjectModel;
 
 namespace Squid
 {
     public delegate string TranslateStringHandler(string text);
 
     /// <summary>
-    /// Thiy is the main entry of Squid.
+    /// This is the main entry of Squid.
     /// </summary>
     public static class Gui
     {
@@ -33,7 +34,7 @@ namespace Squid
         /// <summary>
         /// Raised when [mouse down].
         /// </summary>
-        public static event EventHandler MouseDown;
+        public static event MouseEvent MouseDown;
 
         /// <summary>
         /// Gets or sets the renderer.
@@ -60,8 +61,11 @@ namespace Squid
         public static float GlobalFadeSpeed { get; set; }
 
         internal static ButtonState[] Buttons;
-        internal static KeyData[] KeyBuffer { get; private set; }
-        internal static int NumKeyEvents { get; private set; }
+
+        public static ReadOnlyCollection<KeyData> KeyEvents => readOnlyKeyList;
+        
+        private static readonly List<KeyData> keyList = new List<KeyData>();
+        private static readonly ReadOnlyCollection<KeyData> readOnlyKeyList = new ReadOnlyCollection<KeyData>(keyList);
 
         public static int DragThreshold = 6;
 
@@ -124,13 +128,21 @@ namespace Squid
         /// sets the currently pressed and released keys
         /// </summary>
         /// <param name="keys">array of KeyData</param>
-        public static void SetKeyboard(KeyData[] keys)
+        public static void SetKeyboard(KeyData[] keys, int length = -1)
         {
-            KeyBuffer = keys;
-            NumKeyEvents = keys.Length;
+            if (keys == null) return;
+           
+            if (length < 0)
+                length = keys.Length;
 
-            foreach (KeyData key in keys)
+            var count = Math.Min(keys.Length, length);
+            keyList.Clear();
+
+            for (int i = 0; i < count; i++)
             {
+                var key = keys[i];
+                keyList.Add(key);
+
                 if (key.Key == Keys.LEFTSHIFT || key.Key == Keys.RIGHTSHIFT)
                     ShiftPressed = key.Pressed;
 
@@ -184,10 +196,10 @@ namespace Squid
             }
         }
 
-        internal static void OnMouseDown()
+        internal static void OnMouseDown(int button)
         {
             if (MouseDown != null)
-                MouseDown(null, null);
+                MouseDown(null, new MouseEventArgs { Button = button });
         }
 
         static Gui()
@@ -195,7 +207,6 @@ namespace Squid
             Renderer = new NoRenderer();
             DoubleClickSpeed = 250;
             Buttons = new ButtonState[5];
-            KeyBuffer = new KeyData[0x100];
         }
 
         /// <summary>

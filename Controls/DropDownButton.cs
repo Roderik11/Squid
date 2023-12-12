@@ -78,7 +78,11 @@ namespace Squid
                 if (args.Cancel) return;
             }
 
-            if (HotDrop && Dropdown.Controls.Count == 0) return;
+            if (HotDrop && Dropdown.Controls.Count == 0)
+            {
+                Desktop.CloseDropdownsUpTo(Parent);
+                return;
+            }
 
             Dropdown.Owner = Parent;
 
@@ -96,6 +100,7 @@ namespace Squid
             }
 
             Desktop.ShowDropdown(Dropdown, true);
+           
             IsOpen = true;
 
             if (OnOpened != null)

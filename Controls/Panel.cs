@@ -120,6 +120,18 @@ namespace Squid
             }
 
             Content.Position = position;
+
+            if (Gui.MouseScroll != 0 && Desktop.HotControl != null)
+            {
+                if (Hit(Gui.MousePosition.x, Gui.MousePosition.y))
+                {
+                    if (Desktop.HotControl == this || Desktop.HotControl.IsChildOf(this))
+                    {
+                        VScroll.MouseScrollSpeed = 64f / (float)(Content.Size.y - ClipFrame.Size.y);
+                        VScroll.Scroll(Gui.MouseScroll);
+                    }
+                }
+            }
         }
     }
 }

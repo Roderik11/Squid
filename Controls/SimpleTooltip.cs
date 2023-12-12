@@ -82,8 +82,8 @@ namespace Squid
                 PerformLayout();
                 PerformUpdate();
 
-                Size = Label.Size + new Point(16, 16);
-
+                Size = Label.Size + new Point(16 + Padding.Left + Padding.Right, 16 + Padding.Top + Padding.Bottom);
+                
                 // fade in
                 FadeDirection = 1;
             }
@@ -102,8 +102,6 @@ namespace Squid
         }
 
         protected Alignment FinalAlign;
-        private float rotation;
-        private Rectangle clip;
 
         void AlignTooltip()
         {

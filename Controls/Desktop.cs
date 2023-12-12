@@ -324,33 +324,39 @@ namespace Squid
 
             if (Dropdowns.Contains(control)) return;
 
-            if (Dropdowns.Count > 0)
+            for (int i = 0; i < Dropdowns.Count; i++)
             {
-                int index = 0;
-                bool found = false;
+                if (Dropdowns[i].Owner != control.Owner) continue;
 
-                for (int i = 0; i < Dropdowns.Count; i++)
+                for (int j = Dropdowns.Count - 1; j >= i; j--)
                 {
-                    if (Dropdowns[i].Owner == control.Owner)
-                    {
-                        index = i;
-                        found = true;
-                        break;
-                    }
+                    Dropdowns[j].Parent = null;
+                    Dropdowns.RemoveAt(j);
                 }
 
-                if (found)
-                {
-                    for (int i = Dropdowns.Count - 1; i >= index; i--)
-                    {
-                        Dropdowns[i].Parent = null;
-                        Dropdowns.RemoveAt(i);
-                    }
-                }
+                break;
             }
 
             control.Parent = this;
             Dropdowns.Add(control);
+        }
+
+        public void CloseDropdownsUpTo(Control owner)
+        {
+            if (DesignMode) return;
+
+            for (int i = 0; i < Dropdowns.Count; i++)
+            {
+                if (Dropdowns[i].Owner != owner) continue;
+
+                for (int j = Dropdowns.Count - 1; j >= i; j--)
+                {
+                    Dropdowns[j].Parent = null;
+                    Dropdowns.RemoveAt(j);
+                }
+
+                break;
+            }
         }
 
         /// <summary>
@@ -387,10 +393,10 @@ namespace Squid
 
             for (int i = 0; i < Gui.Buttons.Length; i++)
             {
-                if (Gui.GetButton(i) == ButtonState.Press)
+                if (Gui.Buttons[i] == ButtonState.Press)
                     pressed = i;
 
-                if (Gui.GetButton(i) == ButtonState.Down)
+                if (Gui.Buttons[i] == ButtonState.Down)
                     down = i;
             }
 
@@ -445,7 +451,7 @@ namespace Squid
 
             for (int i = 0; i < Gui.Buttons.Length; i++)
             {
-                if (Gui.GetButton(i) == ButtonState.Up)
+                if (Gui.Buttons[i] == ButtonState.Up)
                 {
                     if (MouseDownControl != null)
                     {
@@ -528,7 +534,7 @@ namespace Squid
             PerformLayout();
             PerformLateUpdate();
 
-            foreach (KeyData data in Gui.KeyBuffer)
+            foreach (KeyData data in Gui.KeyEvents)
             {
                 if (data.Pressed && data.Key == Keys.TAB)
                 {
