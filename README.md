@@ -8,7 +8,7 @@ SQUID does not depend on a certain rendering engine, you can use it with any eng
 - it's a UI blackbox
 - it's easy to integrate
 - it is engine agnostic
-- it does not manage actual texture or font resources, only integers and strings
+- it is unaware of texture or font resources, only integers and strings
 - it doesn’t draw anything; you do
 
 All you need to do is to implement a single interface - the ISquidRenderer.
