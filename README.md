@@ -66,6 +66,7 @@ https://github.com/Roderik11/Squid/wiki/Using-Squid
 - TextArea
 - TextBox
 - TreeView
+- VirtualList
 - Window
 
 ### TODOs:
