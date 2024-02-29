@@ -79,7 +79,7 @@ namespace Squid
         /// <value>The items.</value>
         public ActiveList<ListBoxItem> Items
         {
-            get { return Listbox.Items; }
+            get => Listbox.Items;
             private set { }
         }
 
@@ -89,8 +89,8 @@ namespace Squid
         /// <value>The selected item.</value>
         public ListBoxItem SelectedItem
         {
-            get { return Listbox.SelectedItem; }
-            set { Listbox.SelectedItem = value; }
+            get => Listbox.SelectedItem;
+            set => Listbox.SelectedItem = value;
         }
 
         /// <summary>
@@ -102,30 +102,38 @@ namespace Squid
             DropdownSize = new Point(100, 100);
             Style = "dropdown";
 
-            Button = new Button();
-            Button.Size = new Point(30, 30);
-            Button.Dock = DockStyle.Right;
+            Button = new Button
+            {
+                Size = new Point(30, 30),
+                Dock = DockStyle.Right,
+                Style = "dropdownButton"
+            };
             Button.MouseClick += Button_MouseClick;
-            Button.Style = "dropdownButton";
             Elements.Add(Button);
 
-            Label = new Label();
-            Label.Dock = DockStyle.Fill;
+            Label = new Label
+            {
+                Dock = DockStyle.Fill,
+                Style = "dropdownLabel"
+            };
             Label.MouseClick += Button_MouseClick;
-            Label.Style = "dropdownLabel";
             Elements.Add(Label);
 
-            Dropdown = new Window();
-            Dropdown.Resizable = true;
-            Dropdown.Scissor = false;
-            Dropdown.Style = "frame";
+            Dropdown = new Window
+            {
+                Resizable = true,
+                Scissor = false,
+                Style = "frame"
+            };
 
-            Listbox = new ListBox();
-            Listbox.Dock = DockStyle.Fill;
+            Listbox = new ListBox
+            {
+                Dock = DockStyle.Fill,
+                Multiselect = false
+            };
             Listbox.SelectedItemChanged += Listbox_SelectedItemChanged;
             Listbox.Items.ItemAdded += Items_ItemAdded;
             Listbox.Items.ItemRemoved += Items_ItemRemoved;
-            Listbox.Multiselect = false;
             Dropdown.Controls.Add(Listbox);
         }
 
@@ -134,9 +142,8 @@ namespace Squid
             if (e.Item.Selected)
             {
                 Label.Text = string.Empty;
-            
-                if (SelectedItemChanged != null)
-                    SelectedItemChanged(this, e.Item);
+
+                SelectedItemChanged?.Invoke(this, e.Item);
             }
         }
 
@@ -146,8 +153,7 @@ namespace Squid
             {
                 Label.Text = e.Item.Text;
 
-                if (SelectedItemChanged != null)
-                    SelectedItemChanged(this, e.Item);
+                SelectedItemChanged?.Invoke(this, e.Item);
             }
         }
 
@@ -155,8 +161,7 @@ namespace Squid
         {
             Label.Text = value != null ? value.Text : string.Empty;
 
-            if (SelectedItemChanged != null)
-                SelectedItemChanged(this, value);
+            SelectedItemChanged?.Invoke(this, value);
 
             Close();
         }
@@ -187,8 +192,7 @@ namespace Squid
             Desktop.ShowDropdown(Dropdown, false);
             IsOpen = true;
 
-            if (OnOpened != null)
-                OnOpened(this, null);
+            OnOpened?.Invoke(this, null);
         }
 
         public void Close()
@@ -205,8 +209,7 @@ namespace Squid
             Desktop.CloseDropdowns();
             IsOpen = false;
 
-            if (OnClosed != null)
-                OnClosed(this, null);
+            OnClosed?.Invoke(this, null);
         }
 
         public override bool Contains(Control control)

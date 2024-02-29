@@ -9,8 +9,8 @@ namespace Squid
         internal Control _control;
         internal GuiActionList _list;
 
-        protected GuiActionList Actions { get { return _list; } }
-        protected Control Control { get { return _control; } }
+        protected GuiActionList Actions => _list;
+        protected Control Control => _control;
 
         public event VoidEvent Finished;
         public event VoidEvent Started;
@@ -31,8 +31,7 @@ namespace Squid
                 {
                     End();
 
-                    if (Finished != null)
-                        Finished(_control);
+                    Finished?.Invoke(_control);
                 }
             }
         }
@@ -46,14 +45,12 @@ namespace Squid
 
                 Start();
 
-                if (Started != null)
-                    Started(_control);
+                Started?.Invoke(_control);
             }
 
             Update(dt);
 
-            if (Updated != null)
-                Updated(_control);
+            Updated?.Invoke(_control);
         }
 
         public virtual void Start() { }
@@ -66,11 +63,11 @@ namespace Squid
         internal bool IsUpdating;
 
         private int index;
-        private Control owner;
-        private List<GuiAction> Actions = new List<GuiAction>();
+        private readonly Control owner;
+        private readonly List<GuiAction> Actions = new List<GuiAction>();
 
-        public GuiAction First { get { return Actions.Count > 0 ? Actions[0] : null; } }
-        public GuiAction Last { get { return Actions.Count > 0 ? Actions[Actions.Count - 1] : null; } }
+        public GuiAction First => Actions.Count > 0 ? Actions[0] : null;
+        public GuiAction Last => Actions.Count > 0 ? Actions[Actions.Count - 1] : null;
 
         public GuiActionList(Control owner)
         {

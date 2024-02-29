@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.ComponentModel;
 
 namespace Squid
@@ -11,7 +9,7 @@ namespace Squid
     [Toolbox]
     public class Window : Control, IControlContainer
     {
-        private Resizer Sizer;
+        private readonly Resizer Sizer;
         private Point ClickedPos;
         private bool IsDragging;
 
@@ -31,6 +29,10 @@ namespace Squid
         /// <value>The snap distance.</value>
         [Category("Behavior")]
         public int SnapDistance { get; set; }
+
+
+        [Category("Behavior")]
+        public int SnapGrid = 1;
 
         /// <summary>
         /// Gets or sets a value indicating whether [allow drag out].
@@ -68,8 +70,8 @@ namespace Squid
         [Category("Behavior")]
         public Margin GripSize
         {
-            get { return Sizer.GripSize; }
-            set { Sizer.GripSize = value; }
+            get => Sizer.GripSize;
+            set => Sizer.GripSize = value;
         }
 
         /// <summary>
@@ -115,7 +117,7 @@ namespace Squid
         /// </summary>
         public void StartDrag()
         {
-            ClickedPos = Gui.MousePosition - Position;
+            ClickedPos = Gui.MousePosition / GetScale() - Position;
             IsDragging = true;
         }
 
@@ -129,7 +131,7 @@ namespace Squid
 
         private void Drag()
         {
-            Point p = Gui.MousePosition - ClickedPos;
+            Point p = Gui.MousePosition / GetScale() - ClickedPos;
 
             if (!Modal)
             {
@@ -181,6 +183,9 @@ namespace Squid
                 if (p.x + Size.x > Parent.Size.x - SnapDistance) p.x = Parent.Size.x - Size.x;
                 if (p.y + Size.y > Parent.Size.y - SnapDistance) p.y = Parent.Size.y - Size.y;
             }
+
+            p.x = p.x - p.x % SnapGrid;
+            p.y = p.y - p.y % SnapGrid;
 
             Position = p;
         }

@@ -61,7 +61,7 @@ namespace Squid
             int texture = Gui.Renderer.GetTexture(Texture);
             if (texture < 0) return;
 
-            if (TextureRect.IsEmpty())
+            if (TextureRect.IsEmpty)
             {
                 Point texsize = Gui.Renderer.GetTextureSize(texture);
                 TextureRect = new Rectangle(Point.Zero, texsize);

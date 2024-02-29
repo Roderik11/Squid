@@ -39,8 +39,7 @@ namespace Squid
 
                 _result = value;
 
-                if (OnResult != null)
-                    OnResult(this, _result);
+                OnResult?.Invoke(this, _result);
             }
         }
 

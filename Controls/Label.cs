@@ -12,7 +12,7 @@ namespace Squid
     [Toolbox]
     public class Label : Control, ISelectable
     {
-        private List<TextLine> Lines = new List<TextLine>();
+        private readonly List<TextLine> Lines = new List<TextLine>();
         private bool IsDirty;
         private Point TextSize;
         private string ActiveHref;
@@ -162,16 +162,18 @@ namespace Squid
                 LinkClicked(ActiveHref);
         }
 
-        private Dictionary<string, bool> activeLibrary = new Dictionary<string, bool>();
-        private Dictionary<string, Control> library = new Dictionary<string, Control>();
+        private readonly Dictionary<string, bool> activeLibrary = new Dictionary<string, bool>();
+        private readonly Dictionary<string, Control> library = new Dictionary<string, Control>();
 
         private void UpdateText(Style style)
         {
             activeLibrary.Clear();
             Lines.Clear();
 
-            TextElement def = new TextElement();
-            def.Font = style.Font;
+            TextElement def = new TextElement
+            {
+                Font = style.Font
+            };
 
             List<TextElement> elements = BBCode.Parse(_text, style, BBCodeEnabled);
             List<TextElement> textElements = new List<TextElement>();
@@ -333,15 +335,14 @@ namespace Squid
                                     lineHeight = 0;
 
                                     // add a break
-                                    TextElement linebreak = new TextElement(e);
-                                    linebreak.Linebreak = true;
-                                    sub.Add(linebreak);
+                                    sub.Add(new TextElement(e) { Linebreak = true });
 
                                     // create new starting element
                                     e = new TextElement(element);
                                     e.Text = temp.TrimStart();
                                     e.Position = pos;
                                     e.Size = Gui.Renderer.GetTextSize(e.Text, font);
+
                                     lineHeight = Math.Max(lineHeight, e.Size.y);
                                     firstInLine = false;
                                 }
@@ -706,7 +707,7 @@ namespace Squid
             else if (AutoSize == Squid.AutoSize.HorizontalVertical)
             {
                 int h = MinSize.y > 0 ? Math.Max(MinSize.y, TextSize.y) : TextSize.y;
-                int w = MinSize.x > 0 ? Math.Max(MinSize.x, TextSize.x) : TextSize.x;
+                int w = MinSize.x > 0 ? Math.Max(MinSize.x, TextSize.x + 4) : TextSize.x + 4;
 
                 Size = new Point(w, h);
             }
@@ -714,6 +715,8 @@ namespace Squid
 
         protected override void OnLateUpdate()
         {
+            if (ClipRect.IsZeroSize) return;
+
             if (!IsDirty)
                 IsDirty = LastSize.x != Size.x || LastSize.y != Size.y;
 
@@ -723,23 +726,24 @@ namespace Squid
                 UpdateText(style);
             }
 
-            if (Desktop.HotControl == this)
+            if (Desktop.HotControl != this) return;
+
+            Point m = Gui.MousePosition;
+            ActiveHref = null;
+
+            Desktop.CurrentCursor = Cursor;
+
+            foreach (TextLine line in Lines)
             {
-                Point m = Gui.MousePosition;
-                ActiveHref = null;
-
-                foreach (TextLine line in Lines)
+                foreach (TextElement element in line.Elements)
                 {
-                    foreach (TextElement element in line.Elements)
-                    {
-                        if (!element.IsLink) continue;
+                    if (!element.IsLink) continue;
 
-                        if (element.Rectangle.Contains(m))
-                        {
-                            Desktop.CurrentCursor = Cursors.Link;
-                            ActiveHref = element.Href;
-                            break;
-                        }
+                    if (element.Rectangle.Contains(m))
+                    {
+                        Desktop.CurrentCursor = Cursors.Link;
+                        ActiveHref = element.Href;
+                        break;
                     }
                 }
             }
@@ -813,6 +817,8 @@ namespace Squid
             int font;
             Point p1, p2, size;
 
+            var scale = GetScale();
+
             foreach (TextLine line in Lines)
             {
                 foreach (TextElement element in line.Elements)
@@ -820,8 +826,8 @@ namespace Squid
                     if (element.Linebreak) continue;
 
                     font = Gui.Renderer.GetFont(element.Font);
-                    size = element.Size;
-                    p2 = element.Position + Location;
+                    size = element.Size * scale;
+                    p2 = ((element.Position * scale) + Location);// * scale;
 
                     element.Rectangle = new Rectangle(p2, size);
 
@@ -831,16 +837,21 @@ namespace Squid
                     if (element.IsControl)
                         continue;
 
+                    var color = element.Color.HasValue ? (int)element.Color : style.TextColor;
+                   
+                    if (UseTextColor) 
+                        color = TextColor;
+
                     if (element.IsLink)
-                        Gui.Renderer.DrawBox(p2.x, p2.y + size.y, size.x - 1, 1, ColorInt.FromArgb(opacity, ColorInt.FromArgb(opacity, element.Color.HasValue ? (int)element.Color : style.TextColor)));
+                        color = LinkColor;
+
+                    if (element.IsLink)
+                        Gui.Renderer.DrawBox(p2.x, p2.y + size.y, size.x - 1, 1, ColorInt.FromArgb(opacity, color));
 
                     //if (element.IsLink && element.Href == ActiveHref)
                     //    Gui.Renderer.DrawBox(p2.x, p2.y, size.x - 1, size.y, ColorInt.FromArgb(opacity, LinkColor));
 
-                    if (UseTextColor)
-                        Gui.Renderer.DrawText(element.Text, p2.x, p2.y, font, ColorInt.FromArgb(opacity, TextColor));
-                    else
-                        Gui.Renderer.DrawText(element.Text, p2.x, p2.y, font, ColorInt.FromArgb(opacity, element.Color.HasValue ? (int)element.Color : style.TextColor));
+                    Gui.Renderer.DrawText(element.Text, p2.x, p2.y, font, ColorInt.FromArgb(opacity, color));
                 }
             }
         }

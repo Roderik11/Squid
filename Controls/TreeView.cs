@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using System.ComponentModel;
 
 namespace Squid
@@ -18,7 +17,6 @@ namespace Squid
     [Toolbox]
     public class TreeView : Control
     {
-        private Frame ItemContainer;
         private TreeNode _selectedNode;
 
         /// <summary>
@@ -37,6 +35,8 @@ namespace Squid
         /// </summary>
         /// <value>The clip frame.</value>
         public Frame ClipFrame { get; private set; }
+
+        public Frame ItemContainer { get; private set; }
 
         /// <summary>
         /// Gets the nodes.
@@ -66,8 +66,7 @@ namespace Squid
                     _selectedNode.Focus();
                 }
 
-                if (SelectedNodeChanged != null)
-                    SelectedNodeChanged(this, _selectedNode);
+                SelectedNodeChanged?.Invoke(this, _selectedNode);
             }
         }
 
@@ -104,6 +103,7 @@ namespace Squid
 
             ItemContainer = new Frame();
             ItemContainer.AutoSize = AutoSize.Vertical;
+            ItemContainer.Dock = DockStyle.FillX;
             ItemContainer.Parent = ClipFrame;
 
             MouseWheel += TreeView_MouseWheel;
@@ -125,6 +125,38 @@ namespace Squid
             SelectedNode = ItemContainer.Controls[prev] as TreeNode;
         }
 
+        public TreeNode FindNode(object value, TreeNode parent = null)
+        {
+            var nodes = parent != null ? parent.Nodes : Nodes;
+
+            foreach (var node in nodes)
+            {
+                if(node.Value == value)return node;
+
+                var found = FindNode(value, node);
+                if(found != null) return found;
+            }
+
+            return null;
+        }
+
+        public void ExpandTo(TreeNode node)
+        {
+            while(node.ParentNode != null)
+            {
+                node.ParentNode.Expanded = true;
+                node = node.ParentNode;
+            }
+        }
+
+        public void ScrollTo(TreeNode node)
+        {
+            if (node == null) return;
+            var pos = (float)node.Position.y / (ItemContainer.Size.y - ClipFrame.Size.y);
+            pos -= (float)(node.Size.y * 3) / (ItemContainer.Size.y - ClipFrame.Size.y);
+            Scrollbar.SetValue(pos);
+        }
+
         void TreeView_MouseWheel(Control sender, MouseEventArgs args)
         {
             Scrollbar.Scroll(Gui.MouseScroll);
@@ -133,24 +165,10 @@ namespace Squid
 
         protected override void OnUpdate()
         {
-            // force the width to be that of its parent
-            ItemContainer.Size = new Point(ClipFrame.Size.x, ItemContainer.Size.y);
-
-            // move the label up/down using the scrollbar value
-            if (ItemContainer.Size.y < ClipFrame.Size.y) // no need to scroll
-            {
-                Scrollbar.Visible = false; // hide scrollbar
-                ItemContainer.Position = new Point(0, 0); // set fixed position
-            }
-            else
-            {
-                Scrollbar.Scale = Math.Min(1, (float)Size.y / (float)ItemContainer.Size.y);
-                Scrollbar.Visible = true; // show scrollbar
-                ItemContainer.Position = new Point(0, (int)((ClipFrame.Size.y - ItemContainer.Size.y) * Scrollbar.EasedValue));
-            }
-
-            if (Scrollbar.ShowAlways)
-                Scrollbar.Visible = true;
+            bool visible = Scrollbar.ShowAlways || ItemContainer.Size.y > ClipFrame.Size.y;
+            Scrollbar.Visible = visible;
+            Scrollbar.Scale = visible ? Math.Min(1, (float)Size.y / ItemContainer.Size.y) : 1;
+            ItemContainer.Position = visible ? new Point(0, (int)((ClipFrame.Size.y - ItemContainer.Size.y) * Scrollbar.EasedValue)) : Point.Zero;
         }
 
         void Nodes_BeforeItemsCleared(object sender, EventArgs e)
@@ -173,8 +191,7 @@ namespace Squid
 
         void Item_SelectedChanged(Control sender)
         {
-            TreeNode node = sender as TreeNode;
-            if (node == null) return;
+            if (!(sender is TreeNode node)) return;
 
             if (node.Selected)
                 SelectedNode = node;
@@ -224,18 +241,6 @@ namespace Squid
             ItemContainer.Controls.Add(e.Item);
         }
 
-        void item_OnSelect(object sender, EventArgs e)
-        {
-            TreeNode node = sender as TreeNode;
-
-            if (SelectedNode != null) SelectedNode.Selected = false;
-            SelectedNode = node;
-            if (SelectedNode != null) SelectedNode.Selected = true;
-
-            if (SelectedNodeChanged != null)
-                SelectedNodeChanged(this, SelectedNode);
-        }
-
         internal void RemoveNode(TreeNode node)
         {
             ItemContainer.Controls.Remove(node);
@@ -275,15 +280,16 @@ namespace Squid
     /// </summary>
     public class TreeNode : Control, ISelectable
     {
-        internal TreeView treeview;
         private bool _selected;
         private bool _expanded;
         private bool _suspendEvents;
-
+        private int _depth;
         /// <summary>
         /// Raised when [on selected changed].
         /// </summary>
         public event VoidEvent SelectedChanged;
+
+        public TreeView treeview { get; internal set; }
 
         /// <summary>
         /// Raised when [on exppanded changed].
@@ -302,8 +308,7 @@ namespace Squid
             {
                 if (value == _selected) return;
                 _selected = value;
-                if (SelectedChanged != null)
-                    SelectedChanged(this);
+                SelectedChanged?.Invoke(this);
             }
         }
 
@@ -323,10 +328,7 @@ namespace Squid
                 _expanded = value;
 
                 if (!_suspendEvents)
-                {
-                    if (ExpandedChanged != null)
-                        ExpandedChanged(this);
-                }
+                    ExpandedChanged?.Invoke(this);
             }
         }
 
@@ -340,7 +342,12 @@ namespace Squid
         /// Gets the node depth.
         /// </summary>
         /// <value>The node depth.</value>
-        public int NodeDepth { get; internal set; }
+        public int NodeDepth
+        {
+            get => _depth;
+            set { _depth = value; OnDepthChanged(); }
+
+        }
 
         /// <summary>
         /// Gets or sets the nodes.
@@ -365,16 +372,18 @@ namespace Squid
             Dock = DockStyle.Top;
         }
 
-        protected override void OnUpdate()
-        {
-            base.OnUpdate();
+        protected virtual void OnDepthChanged() { }
 
-            if (treeview != null && treeview.Indent != 0)
-            {
-                Margin m = Margin;
-                Margin = new Margin(treeview.Indent * NodeDepth, m.Top, m.Right, m.Bottom);
-            }
-        }
+        //protected override void OnUpdate()
+        //{
+        //    base.OnUpdate();
+
+        //    if (treeview != null && treeview.Indent != 0)
+        //    {
+        //        Margin m = Margin;
+        //        Margin = new Margin(treeview.Indent * NodeDepth, m.Top, m.Right, m.Bottom);
+        //    }
+        //}
 
         void Nodes_BeforeItemsCleared(object sender, EventArgs e)
         {
@@ -382,15 +391,13 @@ namespace Squid
             {
                 node.ParentNode = null;
 
-                if (treeview != null)
-                    treeview.RemoveNode(node);
+                treeview?.RemoveNode(node);
             }
         }
 
         void Nodes_ItemRemoved(object sender, ListEventArgs<TreeNode> e)
         {
-            if (treeview != null)
-                treeview.RemoveNode(e.Item);
+            treeview?.RemoveNode(e.Item);
 
             e.Item.ParentNode = null;
         }

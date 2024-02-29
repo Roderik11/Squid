@@ -14,7 +14,7 @@ namespace Squid
         private bool dirtyAdd;
         private bool dirtyRemove;
 
-        private List<Control> toAdd = new List<Control>();
+        private readonly List<Control> toAdd = new List<Control>();
 
         internal void Cleanup()
         {
@@ -142,7 +142,7 @@ namespace Squid
         private bool dirtyAdd;
         private bool dirtyRemove;
 
-        private List<Control> toAdd = new List<Control>();
+        private readonly List<Control> toAdd = new List<Control>();
 
         internal void Cleanup()
         {

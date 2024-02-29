@@ -161,18 +161,6 @@ namespace Squid
         /// <summary>
         /// Returns the color expressed as integer
         /// </summary>
-        /// <param name="r">red</param>
-        /// <param name="g">green</param>
-        /// <param name="b">blue</param>
-        /// <returns></returns>
-        public static int RGB(int r, int g, int b)
-        {
-            return (0xff << 24) | ((r & 0xff) << 16) | ((g & 0xff) << 8) | b;
-        }
-
-        /// <summary>
-        /// Returns the color expressed as integer
-        /// </summary>
         /// <param name="a">alpha</param>
         /// <param name="r">red</param>
         /// <param name="g">green</param>
@@ -181,6 +169,18 @@ namespace Squid
         public static int ARGB(float a, float r, float g, float b)
         {
             return ARGB((int)(a * 0xff), (int)(b * 0xff), (int)(g * 0xff), (int)(r * 0xff));
+        }
+
+        /// <summary>
+        /// Returns the color expressed as integer
+        /// </summary>
+        /// <param name="r">red</param>
+        /// <param name="g">green</param>
+        /// <param name="b">blue</param>
+        /// <returns></returns>
+        public static int RGB(int r, int g, int b)
+        {
+            return (0xff << 24) | ((r & 0xff) << 16) | ((g & 0xff) << 8) | b;
         }
     }
 }

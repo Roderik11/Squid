@@ -93,12 +93,12 @@ namespace Squid
 
     internal static class BBCode
     {
-        private static Regex TagB;
-        private static Regex TagURL;
-        private static Regex TagIMG;
-        private static Regex TagColor;
-        private static Regex TagFont;
-        private static Regex TagCTRL1;
+        private static readonly Regex TagB;
+        private static readonly Regex TagURL;
+        private static readonly Regex TagIMG;
+        private static readonly Regex TagColor;
+        private static readonly Regex TagFont;
+        private static readonly Regex TagCTRL1;
 
         private static Xml.XmlReader reader;
 
@@ -248,10 +248,7 @@ namespace Squid
                                         }
                                         else if (reader.Name.Equals("color"))
                                         {
-
-                                            int color = element.Color.Value;
-
-                                            if (int.TryParse(reader.Value, System.Globalization.NumberStyles.HexNumber, System.Globalization.CultureInfo.InvariantCulture, out color))
+                                            if (int.TryParse(reader.Value, System.Globalization.NumberStyles.HexNumber, System.Globalization.CultureInfo.InvariantCulture, out int color))
                                                 element.Color = color;
                                             else if (int.TryParse(reader.Value, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out color))
                                                 element.Color = color;

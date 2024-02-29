@@ -124,9 +124,9 @@ namespace Squid
             internal set
             {
                 if (_focused == value) return;
-                if (_focused != null) _focused.OnLostFocus();
+                _focused?.OnLostFocus();
                 _focused = value;
-                if (_focused != null) _focused.OnGotFocus();
+                _focused?.OnGotFocus();
             }
         }
 
@@ -160,6 +160,9 @@ namespace Squid
         /// <value>The tooltip control.</value>
         [Xml.XmlIgnore]
         public Tooltip TooltipControl { get; set; }
+
+        public bool IsModal => ModalQueue.Count > 0;
+
 
         /// <summary>
         /// Closes the dropdowns.
@@ -196,9 +199,7 @@ namespace Squid
         public void DrawCursor(int x, int y)
         {
             Cursor cursor = GetCursor();
-
-            if (cursor != null)
-                cursor.Draw(x, y);
+            cursor?.Draw(x, y);
         }
 
         /// <summary>
@@ -250,10 +251,9 @@ namespace Squid
         {
             for (int i = Controls.Count - 1; i >= 0; i--)
             {
-                Window w = Controls[i] as Window;
-                if (w == null) continue;
+                if (!(Controls[i] is Window w)) continue;
 
-                if (w.Enabled && w.Visible && w.Hit(Gui.MousePosition.x, Gui.MousePosition.y))
+                if (w.Enabled && w.Visible && w.Hit(x, y))
                     return w;
             }
 
@@ -432,8 +432,7 @@ namespace Squid
 
                 if (hot != HotControl)
                 {
-                    if (HotControl != null)
-                        HotControl.OnMouseLeave();
+                    HotControl?.OnMouseLeave();
 
                     if (hot != null)
                     {
@@ -512,13 +511,11 @@ namespace Squid
 
             if (!DesignMode)
             {
-                if (hot != null)
-                    hot.DoEvents();
+                hot?.DoEvents();
 
                 DoKeyEvents();
 
-                if (FocusedControl != null)
-                    FocusedControl.DoKeyEvents();
+                FocusedControl?.DoKeyEvents();
 
                 if (IsDragging)
                 {
@@ -568,9 +565,11 @@ namespace Squid
 
             IsDragging = true;
 
-            DragDropArgs = new DragDropEventArgs();
-            DragDropArgs.DraggedControl = data;
-            DragDropArgs.Source = sender;
+            DragDropArgs = new DragDropEventArgs
+            {
+                DraggedControl = data,
+                Source = sender
+            };
 
             DragDropOffset = data.Location - Gui.MousePosition;
 
@@ -598,13 +597,8 @@ namespace Squid
 
             if (index > 0)
             {
-                Control result = FindTabIndex(index);
-
-                if (result == null)
-                    result = FindTabIndex(1);
-
-                if (result != null)
-                    result.Focus();
+                Control result = FindTabIndex(index) ?? FindTabIndex(1);
+                result?.Focus();
             }
         }
 
@@ -629,17 +623,17 @@ namespace Squid
 
         private Control _focused;
         private Control currentContext;
-        private ControlStyle DefaultStyle = new ControlStyle();
+        private readonly ControlStyle DefaultStyle = new ControlStyle();
         private Control DragData;
         private DragDropEventArgs DragDropArgs;
         private Point DragDropOffset;
         private Control DragDropSender;
-        private List<Control> Dropdowns = new List<Control>();
         private Control dropTarget;
         private Control hot;
         private bool IsDragging;
         private bool isDropInvalid;
-        private List<Window> ModalQueue = new List<Window>();
+        private readonly List<Window> ModalQueue = new List<Window>();
+        private readonly List<Control> Dropdowns = new List<Control>();
         private Window window;
 
         public event DragDropEvent DragDropEnded;

@@ -16,6 +16,9 @@ namespace Squid
         public int Top;
         public int Bottom;
 
+        public Point Size => new Point(Width, Height);
+        public Point Position => new Point(Left, Top);
+
         /// <summary>
         /// Gets the width.
         /// </summary>
@@ -88,7 +91,7 @@ namespace Squid
         /// <returns><c>true</c> if XXXX, <c>false</c> otherwise</returns>
         public bool Intersects(Rectangle rect)
         {
-            return ((((rect.Left < (Left + Width)) && (Left < (rect.Left + rect.Width))) && (rect.Top < (Top + Height))) && (Top < (rect.Top + rect.Height)));
+            return (rect.Left < (Left + Width)) && (Left < (rect.Left + rect.Width)) && (rect.Top < (Top + Height)) && (Top < (rect.Top + rect.Height));
         }
 
         /// <summary>
@@ -141,9 +144,8 @@ namespace Squid
         /// Determines whether this instance is empty.
         /// </summary>
         /// <returns><c>true</c> if this instance is empty; otherwise, <c>false</c>.</returns>
-        public bool IsEmpty()
-        {
-            return Left == Right && Top == Bottom;
-        }
+        public bool IsEmpty => Left == Right && Top == Bottom;
+
+        public bool IsZeroSize => Width < 1 || Height < 1;
     }
 }

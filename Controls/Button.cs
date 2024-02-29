@@ -50,8 +50,7 @@ namespace Squid
 
                 _checked = value;
 
-                if (CheckedChanged != null)
-                    CheckedChanged(this);
+                CheckedChanged?.Invoke(this);
             }
         }
 

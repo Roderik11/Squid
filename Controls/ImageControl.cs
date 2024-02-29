@@ -84,7 +84,7 @@ namespace Squid
 
             color = ColorInt.FromArgb(opacity, color);
 
-            if (TextureRect.IsEmpty())
+            if (TextureRect.IsEmpty)
             {
                 Point texsize = Gui.Renderer.GetTextureSize(texture);
                 TextureRect = new Rectangle(Point.Zero, texsize);
@@ -97,7 +97,7 @@ namespace Squid
 
             if (Tiling == TextureMode.Grid || Tiling == TextureMode.GridRepeat)
             {
-                SliceTexture(texture, Tiling, TextureRect, Grid, opacity, color);
+                SliceTexture(texture, Tiling, TextureRect, Grid, color);
             }
             else if (Tiling == TextureMode.Stretch)
             {
@@ -111,9 +111,31 @@ namespace Squid
 
                 Gui.Renderer.DrawTexture(texture, pos.x, pos.y, rectsize.x, rectsize.y, TextureRect, color);
             }
+            else if (Tiling == TextureMode.StretchAspect)
+            {
+                Point center = Location + Size / 2;
+                Point rectsize = new Point(TextureRect.Width, TextureRect.Height);
+
+
+                float ratio = (float)rectsize.x / rectsize.y;
+
+                float h = Size.y;
+                float w = h * ratio;
+
+                if (w > Size.x)
+                {
+                    w = Size.x;
+                    h = w / ratio;
+                }
+
+                rectsize = new Point((int)w, (int)h);
+                Point pos = center - rectsize / 2;
+
+                Gui.Renderer.DrawTexture(texture, pos.x, pos.y, rectsize.x, rectsize.y, TextureRect, color);
+            }
             else
             {
-                RepeatTexture(texture, Location, TextureRect, Tiling, opacity, color);
+                RepeatTexture(texture, Location, TextureRect, Tiling, color);
             }
 
             //if (ExcludeFromAtlas)

@@ -116,7 +116,8 @@ namespace Squid
                 page.Button.Parent = ButtonFrame;
             }
 
-            SelectedTab = e.Item;
+            if(SelectedTab == null)
+                SelectedTab = e.Item;
         }
 
         void Button_MouseClick(Control sender, MouseEventArgs args)

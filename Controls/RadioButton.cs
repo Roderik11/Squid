@@ -10,9 +10,6 @@ namespace Squid
     [Toolbox]
     public class RadioButton : Control, ICheckable, IText
     {
-        private string _text;
-        private bool _checked;
-
         /// <summary>
         /// Raised when [checked changed].
         /// </summary>
@@ -42,14 +39,8 @@ namespace Squid
         /// <value>The text.</value>
         public string Text
         {
-            get { return Label.Text; }
-            set
-            {
-                _text = value;
-
-                if (Label != null)
-                    Label.Text = value;
-            }
+            get => Label.Text;
+            set => Label.Text = value;
         }
 
         /// <summary>
@@ -58,14 +49,8 @@ namespace Squid
         /// <value><c>true</c> if checked; otherwise, <c>false</c>.</value>
         public bool Checked
         {
-            get { return Button.Checked; }
-            set
-            {
-                _checked = value;
-
-                if (Button != null)
-                    Button.Checked = value;
-            }
+            get => Button.Checked;
+            set => Button.Checked = value;
         }
 
         /// <summary>
@@ -82,10 +67,10 @@ namespace Squid
             Button.Dock = DockStyle.Left;
             Button.Size = new Point(29, 30);
             Button.CheckOnClick = true;
-            Button.CheckedChanged += Button_CheckedChanged;
-            Button.BeforeCheckedChanged += Button_BeforeCheckedChanged;
             Button.Style = "checkboxButton";
             Button.NoEvents = true;
+            Button.CheckedChanged += Button_CheckedChanged;
+            Button.BeforeCheckedChanged += Button_BeforeCheckedChanged;
             Elements.Add(Button);
 
             Label = new Label();
@@ -141,8 +126,7 @@ namespace Squid
                 }
             }
 
-            if (CheckedChanged != null)
-                CheckedChanged(this);
+            CheckedChanged?.Invoke(this);
         }
     }
 }

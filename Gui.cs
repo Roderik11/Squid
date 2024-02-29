@@ -35,6 +35,7 @@ namespace Squid
         /// Raised when [mouse down].
         /// </summary>
         public static event MouseEvent MouseDown;
+        public static event MouseEvent MouseUp;
 
         /// <summary>
         /// Gets or sets the renderer.
@@ -196,10 +197,14 @@ namespace Squid
             }
         }
 
-        internal static void OnMouseDown(int button)
+        internal static void OnMouseDown(Control sender, MouseEventArgs args)
         {
-            if (MouseDown != null)
-                MouseDown(null, new MouseEventArgs { Button = button });
+            MouseDown?.Invoke(sender, args);
+        }
+
+        internal static void OnMouseUp(Control sender, MouseEventArgs args)
+        {
+            MouseUp?.Invoke(sender, args);
         }
 
         static Gui()
@@ -213,19 +218,13 @@ namespace Squid
         /// sets the clipboard string
         /// </summary>
         /// <param name="data"></param>
-        public static void SetClipboard(string data)
-        {
-            Clipboard = data;
-        }
+        public static void SetClipboard(string data) => Clipboard = data;
 
         /// <summary>
         /// returns the current clipboard string
         /// </summary>
         /// <returns></returns>
-        public static string GetClipboard()
-        {
-            return Clipboard;
-        }
+        public static string GetClipboard() => Clipboard;
 
         /// <summary>
         /// generates a standard skin

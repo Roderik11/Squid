@@ -5,6 +5,9 @@ using System.Collections;
 using System.ComponentModel;
 using Squid.Xml;
 using System.Text.RegularExpressions;
+using System.Runtime.DesignerServices;
+using System.Net.Mime;
+using System.Runtime.Remoting.Contexts;
 
 namespace Squid
 {
@@ -186,7 +189,6 @@ namespace Squid
         private float FadeIn;
         private float FadeOut = 1;
         private bool _isMouseDrag;
-        private bool _stateWasSet;
         private bool _enabled = true;
         private bool _parentEnabled = true;
         private DateTime TimeClicked;
@@ -203,13 +205,15 @@ namespace Squid
         private Point _floatingSize;
         private DockStyle _dock;
 
-        private static Stack<Rectangle> ScissorStack = new Stack<Rectangle>();
+        private static readonly Stack<Rectangle> ScissorStack = new Stack<Rectangle>();
         private static Rectangle currentScissorRect;
 
         /// <summary>
         /// The area
         /// </summary>
         protected Rectangle ClipRect;
+
+        public Rectangle Rectangle => ClipRect;
 
         /// <summary>
         /// The elements
@@ -276,7 +280,6 @@ namespace Squid
 
         protected string TranslateText(string text)
         {
-            string result = string.Empty;
             string szPattern = @"(\{tk:(.*?)\})+";
             List<string> tokens = new List<string>();
 
@@ -286,7 +289,7 @@ namespace Squid
             string key;
             string translated;
 
-            result = text;
+            string result = text;
 
             foreach (string token in tokens)
             {
@@ -390,7 +393,7 @@ namespace Squid
             }
         }
 
-        private static ControlStyle DefaultStyle = new ControlStyle();
+        private static readonly ControlStyle DefaultStyle = new ControlStyle();
 
         protected ControlStyle LocalStyle = DefaultStyle;
         private string _style;
@@ -556,15 +559,10 @@ namespace Squid
                         return;
                 }
 
-                if (Container != null)
-                {
-                    Container.Controls.Remove(this);
-                }
+                Container?.Controls.Remove(this);
 
-                if (value is IControlContainer)
-                {
-                    ((IControlContainer)value).Controls.Add(this);
-                }
+                if (value is IControlContainer container)
+                    container.Controls.Add(this);
             }
         }
 
@@ -597,7 +595,7 @@ namespace Squid
                 if (_size.x == value.x && _size.y == value.y) return;
                 _size = value;
 
-                if (SizeChanged != null) SizeChanged(this);
+                SizeChanged?.Invoke(this);
 
                 SetBounds();
             }
@@ -617,7 +615,7 @@ namespace Squid
                 _position = value;
                 newlocation = true;
 
-                if (PositionChanged != null) PositionChanged(this);
+                PositionChanged?.Invoke(this);
 
                 SetBounds();
             }
@@ -661,6 +659,8 @@ namespace Squid
             set { _padding = value; }
         }
 
+        private ControlState externalState = ControlState.Default;
+       
         /// <summary>
         /// Gets/Sets the state
         /// </summary>
@@ -670,9 +670,8 @@ namespace Squid
             get { return _state; }
             set
             {
-                _stateWasSet = true;
-
                 if (_state == value) return;
+                if (!selfStateChange) externalState = value;
 
                 _oldState = _state;
                 _state = value;
@@ -684,10 +683,10 @@ namespace Squid
                 FontFade = last.IsFontDifferent(next);
 
                 OnStateChanged();
+                if (selfStateChange)
+                    StateChanged?.Invoke();
 
-                float fade = FadeIn;
-                FadeIn = FadeOut;
-                FadeOut = fade;
+                (FadeOut, FadeIn) = (FadeIn, FadeOut);
             }
         }
 
@@ -712,17 +711,12 @@ namespace Squid
                     return _location;
 
                 newlocation = false;
-                _location = _position;
+                _location = _position * GetScale();
 
                 if (_parent != null)
-                    _location = _parent.Location + _position;
+                    _location = _parent.Location + _position * GetScale();
 
                 return _location;
-
-                if (_parent != null)
-                    return _parent.Location + _position;
-
-                return _position;
             }
         }
 
@@ -731,18 +725,7 @@ namespace Squid
         /// <summary>
         /// Returns the root control
         /// </summary>
-        public Desktop Desktop
-        {
-            get
-            {
-                return _desktop ?? this as Desktop;
-
-                if (_parent != null)
-                    return _parent.Desktop;
-                else
-                    return this as Desktop;
-            }
-        }
+        public Desktop Desktop => _desktop ?? this as Desktop;
 
         //public ControlAnimation Animation;
         public GuiActionList Actions;
@@ -761,7 +744,7 @@ namespace Squid
 
         private static int AutoIncrement;
         public bool IsContainer { get; private set; }
-        private IControlContainer LocalContainer;
+        private readonly IControlContainer LocalContainer;
         private float FinalOpacity;
 
         /// <summary>
@@ -1011,11 +994,13 @@ namespace Squid
 
         public bool InRect(Point start, Point end)
         {
-            Rectangle r1 = new Rectangle();
-            r1.Left = Math.Min(start.x, end.x);
-            r1.Top = Math.Min(start.y, end.y);
-            r1.Right = Math.Max(start.x, end.x);
-            r1.Bottom = Math.Max(start.y, end.y);
+            Rectangle r1 = new Rectangle
+            {
+                Left = Math.Min(start.x, end.x),
+                Top = Math.Min(start.y, end.y),
+                Right = Math.Max(start.x, end.x),
+                Bottom = Math.Max(start.y, end.y)
+            };
 
             return !(ClipRect.Left > r1.Right
                      || ClipRect.Right < r1.Left
@@ -1303,15 +1288,16 @@ namespace Squid
                 child = Elements[i];
                 child.PerformLayout();
 
-                if (AutoSize != AutoSize.None && !child.IsRemoved && child.Visible)
-                {
-                    childPosition = child._position;
-                    childSize = child._size;
-                    childMargin = child._margin;
+                if (AutoSize == AutoSize.None) continue;
+                if (!child.Visible) continue;
+                if (child.IsRemoved) continue;
 
-                    auto.x = Math.Max(auto.x, childPosition.x + childSize.x + childMargin.Right);
-                    auto.y = Math.Max(auto.y, childPosition.y + childSize.y + childMargin.Bottom);
-                }
+                childPosition = child._position;
+                childSize = child._size;
+                childMargin = child._margin;
+
+                auto.x = Math.Max(auto.x, childPosition.x + childSize.x + childMargin.Right);
+                auto.y = Math.Max(auto.y, childPosition.y + childSize.y + childMargin.Bottom);
             }
 
             if (IsContainer)
@@ -1327,18 +1313,19 @@ namespace Squid
                     child = controls[i];
                     child.PerformLayout();
 
-                    if (AutoSize != AutoSize.None && !child.IsRemoved && child.Visible)
-                    {
-                        childPosition = child._position;
-                        childSize = child._size;
-                        childMargin = child._margin;
+                    if (AutoSize == AutoSize.None) continue;
+                    if (!child.Visible) continue;
+                    if (child.IsRemoved) continue;
 
-                        auto.x = Math.Max(auto.x, childPosition.x + childSize.x + childMargin.Right);
-                        auto.y = Math.Max(auto.y, childPosition.y + childSize.y + childMargin.Bottom);
+                    childPosition = child._position;
+                    childSize = child._size;
+                    childMargin = child._margin;
 
-                        auto.x += _padding.Left + _padding.Right;
-                        auto.y += _padding.Top + _padding.Bottom;
-                    }
+                    auto.x = Math.Max(auto.x, childPosition.x + childSize.x + childMargin.Right);
+                    auto.y = Math.Max(auto.y, childPosition.y + childSize.y + childMargin.Bottom);
+
+                    auto.x += _padding.Left + _padding.Right;
+                    auto.y += _padding.Top + _padding.Bottom;
                 }
             }
 
@@ -1393,9 +1380,10 @@ namespace Squid
         /// <param name="padding">The padding.</param>
         /// <param name="font">The font.</param>
         /// <returns>Point.</returns>
-        protected Point AlignText(string text, Alignment align, Margin padding, int font)
+        protected Point AlignText(string text, Alignment align, Margin padding, int font, float scale = 1)
         {
             Point tsize = Gui.Renderer.GetTextSize(text, font);
+            padding.Scale(scale);
 
             switch (align)
             {
@@ -1419,6 +1407,36 @@ namespace Squid
                     return Location + new Point(_size.x - tsize.x - padding.Right, padding.Top);
                 default:
                     return Location;
+            }
+        }
+
+        protected Point AlignText(string text, Alignment align, Point size, Point location, Margin padding, int font, float scale = 1)
+        {
+            Point tsize = Gui.Renderer.GetTextSize(text, font);
+            padding.Scale(scale);
+
+            switch (align)
+            {
+                case Alignment.BottomCenter:
+                    return location + new Point((size.x - tsize.x) / 2, size.y - tsize.y - padding.Bottom);
+                case Alignment.BottomLeft:
+                    return location + new Point(padding.Left, size.y - tsize.y - padding.Bottom);
+                case Alignment.BottomRight:
+                    return location + new Point(size.x - tsize.x - padding.Right, size.y - tsize.y - padding.Bottom);
+                case Alignment.MiddleCenter:
+                    return location + new Point((size.x - tsize.x) / 2, (size.y - tsize.y) / 2);
+                case Alignment.MiddleLeft:
+                    return location + new Point(padding.Left, (int)Math.Floor((float)(size.y - tsize.y) / 2));
+                case Alignment.MiddleRight:
+                    return location + new Point(size.x - tsize.x - padding.Right, (size.y - tsize.y) / 2);
+                case Alignment.TopCenter:
+                    return location + new Point((size.x - tsize.x) / 2, padding.Top);
+                case Alignment.TopLeft:
+                    return location + new Point(padding.Left, padding.Top);
+                case Alignment.TopRight:
+                    return location + new Point(size.x - tsize.x - padding.Right, padding.Top);
+                default:
+                    return location;
             }
         }
 
@@ -1514,6 +1532,8 @@ namespace Squid
         /// </summary>
         protected virtual void DrawBefore() { }
 
+        protected virtual void DrawBeforeChildren() { }
+
         /// <summary>
         /// Override this to do additional drawing after the control has been drawn
         /// </summary>
@@ -1524,6 +1544,18 @@ namespace Squid
         /// This is useful to sync states between controls.
         /// </summary>
         protected virtual void OnStateChanged() { }
+
+        public event Action StateChanged;
+
+        public float UIScale = 1;
+             
+        public float GetScale()
+        {
+            if (_parent == null)
+                return UIScale;
+
+            return _parent.UIScale * _parent.GetScale();
+        }
 
         /// <summary>
         /// Override this to do additional drawing
@@ -1536,16 +1568,23 @@ namespace Squid
             if (opacity == 0) return;
 
             int blend = Tint != -1 ? ColorInt.Blend(Tint, style.BackColor) : style.BackColor;
+
+            var scale = GetScale();
+
             Point loc = Location;
+            Point size = _size;
+
+            //loc.Scale(scale);
+            size.Scale(scale);
 
             if (blend != 0)
-                Gui.Renderer.DrawBox(loc.x, loc.y, _size.x, _size.y, ColorInt.FromArgb(opacity, blend));
+                Gui.Renderer.DrawBox(loc.x, loc.y, size.x, size.y, ColorInt.FromArgb(opacity, blend));
 
             if (string.IsNullOrEmpty(style.Texture)) return;
             int texture = Gui.Renderer.GetTexture(style.Texture);
             if (texture < 0) return;
 
-            if (style.TextureRect.IsEmpty())
+            if (style.TextureRect.IsEmpty)
             {
                 Point texsize = Gui.Renderer.GetTextureSize(texture);
                 style.TextureRect = new Rectangle(Point.Zero, texsize);
@@ -1558,18 +1597,18 @@ namespace Squid
             {
                 case TextureMode.Grid:
                 case TextureMode.GridRepeat:
-                    SliceTexture(texture, style.Tiling, style.TextureRect, style.Grid, opacity, color);
+                    SliceTexture(texture, style.Tiling, style.TextureRect, style.Grid, color);
                     break;
                 case TextureMode.Stretch:
-                    Gui.Renderer.DrawTexture(texture, loc.x, loc.y, _size.x, _size.y, style.TextureRect, color);
+                    Gui.Renderer.DrawTexture(texture, loc.x, loc.y, size.x, size.y, style.TextureRect, color);
                     break;
                 case TextureMode.Center:
-                    Point rectsize = new Point(style.TextureRect.Width, style.TextureRect.Height);
-                    Point pos = loc + _size / 2 - rectsize / 2;
+                    Point rectsize = new Point(style.TextureRect.Width, style.TextureRect.Height) * scale;
+                    Point pos = loc + size / 2 - rectsize / 2;
                     Gui.Renderer.DrawTexture(texture, pos.x, pos.y, rectsize.x, rectsize.y, style.TextureRect, color);
                     break;
                 default:
-                    RepeatTexture(texture, loc, style.TextureRect, style.Tiling, opacity, color);
+                    RepeatTexture(texture, loc, style.TextureRect, style.Tiling, color);
                     break;
 
             }
@@ -1727,7 +1766,7 @@ namespace Squid
 
         protected void PerformLayoutAndClip()
         {
-            Point savesSize = _size;
+            Point savedSize = _size;
 
             if (Dock != DockStyle.None)
                 LayoutDock();
@@ -1736,13 +1775,19 @@ namespace Squid
 
             SetDockRegions();
 
+            var scale = GetScale();
             var loc = Location;
-            ClipRect.From(ref loc, ref _size);
+            var size = _size;
+
+            //loc.Scale(scale);
+            size.Scale(scale);
+
+            ClipRect.From(ref loc, ref size);
 
             if (_parent != null)
                 ClipRect.ClipBy(ref _parent.ClipRect);
 
-            if (_size.x != savesSize.x || _size.y != savesSize.y)
+            if (_size.x != savedSize.x || _size.y != savedSize.y)
                 SizeChanged?.Invoke(this);
         }
 
@@ -1928,20 +1973,19 @@ namespace Squid
             }
         }
 
+        private bool selfStateChange = false;
+
         private void DetermineState()
         {
-            if (_stateWasSet)
-            {
-                _stateWasSet = false;
-                return;
-            }
-
             if (NoEvents) return;
             if (Desktop == null) return;
+            if (externalState != ControlState.Default) return;
 
             // if (root.DesignMode) return;
 
-            if (this is ICheckable && (this as ICheckable).Checked)
+            selfStateChange = true;
+
+            if (this is ICheckable checkable && checkable.Checked)
             {
                 if (!Enabled)
                     State = ControlState.CheckedDisabled;
@@ -1954,7 +1998,7 @@ namespace Squid
                 else
                     State = ControlState.Checked;
             }
-            else if (this is ISelectable && (this as ISelectable).Selected)
+            else if (this is ISelectable selectable && selectable.Selected)
             {
                 if (!Enabled)
                     State = ControlState.SelectedDisabled;
@@ -1978,7 +2022,7 @@ namespace Squid
             else
                 State = ControlState.Default;
 
-            _stateWasSet = false;
+            selfStateChange = false;
         }
 
         private void DrawChildren()
@@ -1996,18 +2040,28 @@ namespace Squid
                 Elements[i].Draw();
         }
 
-        protected void RepeatTexture(int texture, Point loc, Rectangle rect, TextureMode mode, float opacity, int color)
+        protected void RepeatTexture(int texture, Point loc, Rectangle rect, TextureMode mode, int color)
         {
+            var scale = GetScale();
             Point texsize = Gui.Renderer.GetTextureSize(texture);
-
+            Point size = _size * scale;
+            
             int width = rect.Width != 0 ? rect.Width : texsize.x;
             int height = rect.Height != 0 ? rect.Height : texsize.y;
 
-            int countx = (int)Math.Ceiling((float)_size.x / width);
-            int county = (int)Math.Ceiling((float)_size.y / height);
+            int countx = (int)Math.Ceiling((float)size.x / width);
+            int county = (int)Math.Ceiling((float)size.y / height);
 
-            if (mode == TextureMode.RepeatX) county = 1;
-            else if (mode == TextureMode.RepeatY) countx = 1;
+            if (mode == TextureMode.RepeatX)
+            {
+                county = 1;
+                height = size.y;
+            }
+            else if (mode == TextureMode.RepeatY)
+            {
+                countx = 1;
+                width = size.x;
+            }
 
             for (int j = 0; j < county; j++)
             {
@@ -2015,8 +2069,8 @@ namespace Squid
                 {
                     Rectangle newrect = rect;
 
-                    int deltax = (width + width * i) - _size.x;
-                    int deltay = (height + height * j) - _size.y;
+                    int deltax = (width + width * i) - size.x;
+                    int deltay = (height + height * j) - size.y;
 
                     int clippedx = width;
                     int clippedy = height;
@@ -2038,13 +2092,21 @@ namespace Squid
             }
         }
 
-        protected void SliceTexture(int texture, TextureMode mode, Rectangle rect, Margin grid, float opacity, int color)
+        protected void SliceTexture(int texture, TextureMode mode, Rectangle rect, Margin grid, int color)
         {
             bool repeat = mode == TextureMode.GridRepeat;
+            var scale = GetScale();
 
-            Point location = Location;
-            Rectangle outside = new Rectangle(location, _size);
-            Rectangle inside = new Rectangle(location + new Point(grid.Left, grid.Top), _size - new Point(grid.Left + grid.Right, grid.Top + grid.Bottom));
+            Point location = Location;// * scale;
+            Point size = _size * scale;
+
+            grid.Right = (int)(grid.Right * scale);
+            grid.Left = (int)(grid.Left * scale);
+            grid.Top = (int)(grid.Top * scale);
+            grid.Bottom = (int)(grid.Bottom * scale);
+
+            Rectangle outside = new Rectangle(location, size);
+            Rectangle inside = new Rectangle(location + new Point(grid.Left, grid.Top), size - new Point(grid.Left + grid.Right, grid.Top + grid.Bottom));
 
             Rectangle slice = new Rectangle();
 
@@ -2327,7 +2389,7 @@ namespace Squid
             if (_size.x <= 0 || _size.y <= 0)
                 return;
 
-            if (ClipRect.Width <= 0 || ClipRect.Height <= 0)
+            if (ClipRect.IsZeroSize)
                 return;
 
             DrawBefore();
@@ -2378,13 +2440,13 @@ namespace Squid
                 DrawText(style, opacity);
             }
 
+            DrawBeforeChildren();
             DrawChildren();
             DrawElements();
+            DrawCustom();
 
             if (Scissor || Gui.AlwaysScissor)
                 ResetScissor();
-
-            DrawCustom();
         }
 
         internal void DoKeyEvents()
@@ -2786,7 +2848,9 @@ namespace Squid
             TimeClicked = now;
             IsDoubleClick = delta.TotalMilliseconds < Gui.DoubleClickSpeed;
 
-            MouseDown?.Invoke(this, new MouseEventArgs { Button = button });
+            var args = new MouseEventArgs { Button = button };
+            MouseDown?.Invoke(this, args);
+            Gui.OnMouseDown(this, args);
         }
 
         /// <summary>
@@ -2811,7 +2875,9 @@ namespace Squid
         /// <param name="button"></param>
         internal void OnMouseUp(int button)
         {
-            MouseUp?.Invoke(this, new MouseEventArgs { Button = button });
+            var args = new MouseEventArgs { Button = button };
+            MouseUp?.Invoke(this, args);
+            Gui.OnMouseUp(this, args);
         }
 
         internal void OnMouseWheel()

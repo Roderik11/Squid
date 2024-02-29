@@ -74,7 +74,9 @@ namespace Squid
         /// <summary>
         /// Center the texture
         /// </summary>
-        Center
+        Center,
+
+        StretchAspect
     }
 
     /// <summary>

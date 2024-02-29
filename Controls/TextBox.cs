@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace Squid
@@ -13,14 +14,16 @@ namespace Squid
     {
         private float BlinkTime;
         private int DoBlink;
-        private string _text = string.Empty;
-        private bool IsSelection { get { return SelectStart != SelectEnd; } }
         private int SelectStart = 0;
         private int SelectEnd = 0;
         private int Offset;
         private int Caret;
         private bool HasFocus;
+
+        private string _text = string.Empty;
         private string SavedText;
+
+        private bool IsSelection => SelectStart != SelectEnd;
 
         /// <summary>
         /// Raised when [text changed].
@@ -118,8 +121,7 @@ namespace Squid
                 SelectStart = 0;
                 SelectEnd = 0;
 
-                if (TextChanged != null)
-                    TextChanged(this);
+                TextChanged?.Invoke(this);
             }
         }
 
@@ -229,8 +231,7 @@ namespace Squid
 
         void TextBox_LostFocus(Control sender)
         {
-            if (TextCommit != null)
-                TextCommit(this, null);
+            TextCommit?.Invoke(this, null);
         }
 
         void TextBox_MouseDoubleClick(Control sender, MouseEventArgs args)
@@ -275,12 +276,9 @@ namespace Squid
             if (font < 0) return;
 
             Point p = Gui.MousePosition - Location;
-            Point s1 = Gui.Renderer.GetTextSize(masked, font);
-            int carex = p.x + Offset + s1.x;
             int x = 0;
 
             string text = string.Empty;
-            int caret = Caret;
 
             for (int i = 1; i <= masked.Length; i++)
             {
@@ -650,8 +648,7 @@ namespace Squid
 
                 LostFocus += TextBox_LostFocus;
 
-                if (TextCommit != null)
-                    TextCommit(this, null);
+                TextCommit?.Invoke(this, null);
             }
             else if (args.Key == Keys.ESCAPE)
             {
@@ -665,8 +662,7 @@ namespace Squid
 
                 LostFocus += TextBox_LostFocus;
 
-                if (TextCancel != null)
-                    TextCancel(this, null);
+                TextCancel?.Invoke(this, null);
             }
             else
             {
@@ -780,11 +776,15 @@ namespace Squid
             int font = Gui.Renderer.GetFont(style.Font);
             if (font < 0) return;
 
-            Point p = AlignText(masked, Alignment.MiddleLeft, style.TextPadding, font);
+            var scale = GetScale();
+            var loc = Location; // * scale;
+            var size = Size * scale;
 
-            Rectangle clip = new Rectangle(Location, Size);
-            clip.Left += style.TextPadding.Left;
-            clip.Right -= style.TextPadding.Right - 1;
+            Point p = AlignText(masked, Alignment.MiddleLeft, style.TextPadding, font, scale);
+
+            Rectangle clip = new Rectangle(loc, size);
+            clip.Left += (int)(style.TextPadding.Left * scale);
+            clip.Right -= (int)((style.TextPadding.Right - 1) * scale);
             clip = Clip(clip);
 
             if (clip.Width < 1 || clip.Height < 1) return;
@@ -795,7 +795,7 @@ namespace Squid
 
             if (Desktop.FocusedControl == this)
             {
-                Rectangle rect = new Rectangle(Location, Size);
+                Rectangle rect = new Rectangle(loc, size);
 
                 Point s1 = Gui.Renderer.GetTextSize(masked, font);
                 Point s2 = Gui.Renderer.GetTextSize(masked.Substring(0, Caret), font);
@@ -812,8 +812,8 @@ namespace Squid
 
                 int carex = p.x + Offset + s2.x;
 
-                int lim1 = rect.Left + style.TextPadding.Left;
-                int lim2 = rect.Right - style.TextPadding.Right;
+                int lim1 = rect.Left + (int)(style.TextPadding.Left * scale);
+                int lim2 = rect.Right -(int)(style.TextPadding.Right * scale);
 
                 if (carex < lim1)
                     Offset += lim1 - carex;
@@ -829,6 +829,9 @@ namespace Squid
 
                 p.x += Offset;
 
+                //p *= scale;
+                s2 *= scale;
+
                 Gui.Renderer.DrawText(masked, p.x, p.y, font, ColorInt.FromArgb(opacity, UseTextColor ? TextColor : style.TextColor));
 
                 if (!ReadOnly && DoBlink > 0)
@@ -842,14 +845,15 @@ namespace Squid
                     string text = masked.Substring(0, start);
                     string text2 = masked.Substring(start, end - start);
 
-                    Point size1 = Gui.Renderer.GetTextSize(text, font);
-                    Point size2 = Gui.Renderer.GetTextSize(text2, font);
+                    Point size1 = Gui.Renderer.GetTextSize(text, font) * scale;
+                    Point size2 = Gui.Renderer.GetTextSize(text2, font) * scale;
 
                     Gui.Renderer.DrawBox(p.x + size1.x, p.y, size2.x + 2, size2.y, ColorInt.FromArgb(opacity, color));
                 }
             }
             else
             {
+                //p *= scale;
                 HasFocus = false;
                 Offset = 0;
                 Gui.Renderer.DrawText(masked, p.x, p.y, font, ColorInt.FromArgb(opacity, style.TextColor));

@@ -44,6 +44,14 @@ namespace Squid
             Bottom = bottom;
         }
 
+        public void Scale(float scale)
+        {
+            Top = (int)(Top * scale);
+            Left = (int)(Left * scale);
+            Right = (int)(Right * scale);
+            Bottom = (int)(Bottom * scale);
+        }
+             
         /// <summary>
         /// Gets or sets all.
         /// </summary>

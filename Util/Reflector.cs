@@ -15,26 +15,26 @@ namespace Squid
         /// <summary>
         /// The assemblies
         /// </summary>
-        private static Dictionary<string, Assembly> Assemblies = new Dictionary<string, Assembly>();
+        private static readonly Dictionary<string, Assembly> Assemblies = new Dictionary<string, Assembly>();
         /// <summary>
         /// The type cache
         /// </summary>
-        private static Dictionary<Type, List<Type>> TypeCache = new Dictionary<Type, List<Type>>();
+        private static readonly Dictionary<Type, List<Type>> TypeCache = new Dictionary<Type, List<Type>>();
 
         /// <summary>
         /// The cache
         /// </summary>
-        private static Dictionary<Type, Dictionary<Type, object>> Cache = new Dictionary<Type, Dictionary<Type, object>>();
+        private static readonly Dictionary<Type, Dictionary<Type, object>> Cache = new Dictionary<Type, Dictionary<Type, object>>();
         
         /// <summary>
         /// The properties
         /// </summary>
-        private static Dictionary<Type, PropertyInfo[]> Properties = new Dictionary<Type, PropertyInfo[]>();
+        private static readonly Dictionary<Type, PropertyInfo[]> Properties = new Dictionary<Type, PropertyInfo[]>();
 
         /// <summary>
         /// The fields
         /// </summary>
-        private static Dictionary<Type, FieldInfo[]> Fields = new Dictionary<Type, FieldInfo[]>();
+        private static readonly Dictionary<Type, FieldInfo[]> Fields = new Dictionary<Type, FieldInfo[]>();
 
         //public static Mapping<T> GetMapping<T>(Type type) where T : Attribute
         //{

@@ -32,7 +32,7 @@ namespace Squid
         private bool skipEvents;
         private Frame itemContainer;
         private ListBoxItem _selectedItem;
-        private ActiveList<ListBoxItem> _selected = new ActiveList<ListBoxItem>();
+        private readonly ActiveList<ListBoxItem> _selected = new ActiveList<ListBoxItem>();
 
         /// <summary>
         /// Raised when [selected item changed].
@@ -119,8 +119,7 @@ namespace Squid
 
                 skipEvents = false;
 
-                if (SelectedItemChanged != null)
-                    SelectedItemChanged(this, _selectedItem);
+                SelectedItemChanged?.Invoke(this, _selectedItem);
             }
         }
 
@@ -397,8 +396,7 @@ namespace Squid
 
                 _selected = value;
 
-                if (SelectedChanged != null)
-                    SelectedChanged(this);
+                SelectedChanged?.Invoke(this);
             }
         }
 

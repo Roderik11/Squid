@@ -422,14 +422,21 @@ namespace Squid
             row.Cells.Add(cell);
 
             cell.Tag = row;
-            cell.MouseClick += cell_MouseClick;
-            cell.Update += cell_OnUpdate;
+            cell.MouseClick += Cell_MouseClick;
+            cell.StateChanged += () =>
+            {
+                foreach (var c in row.Cells)
+                {
+                    if (c != cell)
+                        c.State = cell.State;
+                }
+            };
 
             // add cell to column
             column.Frame.Controls.Add(cell);
         }
 
-        void cell_MouseClick(Control sender, MouseEventArgs args)
+        void Cell_MouseClick(Control sender, MouseEventArgs args)
         {
             Row row = (Row)sender.Tag;
 
@@ -449,21 +456,21 @@ namespace Squid
             }
         }
 
-        void cell_OnUpdate(Control sender)
-        {
-            if (!FullRowSelect) return;
+        //void Cell_OnUpdate(Control sender)
+        //{
+        //    if (!FullRowSelect) return;
 
-            Row row = (Row)sender.Tag;
+        //    Row row = (Row)sender.Tag;
 
-            if (sender.Equals(Desktop.HotControl) || sender.Equals(Desktop.DropTarget))
-            {
-                foreach (Control cell in row.Cells)
-                {
-                    if (!sender.Equals(cell))
-                        cell.State = sender.State;
-                }
-            }
-        }
+        //    if (sender.Equals(Desktop.HotControl) || sender.Equals(Desktop.DropTarget))
+        //    {
+        //        foreach (Control cell in row.Cells)
+        //        {
+        //            if (!sender.Equals(cell))
+        //                cell.State = sender.State;
+        //        }
+        //    }
+        //}
 
         /// <summary>
         /// Sets the objects.

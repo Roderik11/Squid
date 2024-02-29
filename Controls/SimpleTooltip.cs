@@ -33,7 +33,8 @@ namespace Squid
         /// <value>The delay.</value>
         public float Delay { get; set; }
 
-        protected Control Context { get { return _context; } }
+        protected Control Context => _context;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="SimpleTooltip"/> class.
         /// </summary>
@@ -92,67 +93,62 @@ namespace Squid
         public override void LayoutTooltip()
         {
             if (AutoLayout)
-            {
                 base.LayoutTooltip();
-            }
             else
-            {
                 AlignTooltip();
-            }
         }
-
-        protected Alignment FinalAlign;
 
         void AlignTooltip()
         {
             if (_context == null) return;
+            AlignTo(_context, _context.TooltipAlign);
+        }
 
-            Point location = _context.Location;
-            Point p;
+        public void AlignTo(Control context, Alignment align)
+        {
+            if (context == null) return;
 
-            FinalAlign = Alignment.Inherit;
-            
-            p = TryAlign(_context.TooltipAlign);
+            var p = TryAlign(context, align);
 
             Rectangle oos = OutOfScreen(p, Size);
 
             if (oos.Left != 0 || oos.Right != 0 || oos.Top != 0 || oos.Bottom != 0)
             {
-                if (_context.TooltipAlign == Alignment.MiddleLeft)
+                if (align == Alignment.MiddleLeft)
                 {
                     if (oos.Top > 0)
                         p.y += oos.Top;
                     else if (oos.Bottom > 0)
                         p.y -= oos.Bottom;
                     else
-                        p = TryAlign(Alignment.MiddleRight);
+                        p = TryAlign(context, Alignment.MiddleRight);
                 }
-                else if (_context.TooltipAlign == Alignment.MiddleRight)
+                else if (align == Alignment.MiddleRight)
                 {
                     if (oos.Top > 0)
                         p.y += oos.Top;
                     else if (oos.Bottom > 0)
                         p.y -= oos.Bottom;
                     else
-                        p = TryAlign(Alignment.MiddleLeft);
+                        p = TryAlign(context, Alignment.MiddleLeft);
                 }
-                else if (_context.TooltipAlign == Alignment.TopCenter)
-                {
-                    if (oos.Left > 0)
-                        p.x += oos.Left;
-                    else if(oos.Right > 0)
-                        p.x -= oos.Right;
-                    else
-                        p = TryAlign(Alignment.BottomCenter);
-                }
-                else if (_context.TooltipAlign == Alignment.BottomCenter)
+                else if (align == Alignment.TopCenter)
                 {
                     if (oos.Left > 0)
                         p.x += oos.Left;
                     else if (oos.Right > 0)
                         p.x -= oos.Right;
                     else
-                        p = TryAlign(Alignment.TopCenter);
+                        p = TryAlign(context, Alignment.BottomCenter);
+                }
+                else if (align == Alignment.BottomCenter)
+                {
+                    if (oos.Left > 0)
+                        p.x += oos.Left;
+                    else if (oos.Right > 0)
+                        p.x -= oos.Right;
+                    else
+                        p = TryAlign(context, Alignment.TopCenter);
                 }
             }
 
@@ -161,7 +157,7 @@ namespace Squid
             PerformUpdate();
         }
 
-        Rectangle OutOfScreen(Point pos, Point size)
+        protected Rectangle OutOfScreen(Point pos, Point size)
         {
             Rectangle result = new Rectangle(0, 0, 0, 0);
 
@@ -180,11 +176,10 @@ namespace Squid
             return result;
         }
 
-        private Point TryAlign(Alignment align)
+        protected Point TryAlign(Control context, Alignment align)
         {
-            FinalAlign = align;
-            Point loc = _context.Location;
-            Point csize = _context.Size;
+            Point loc = context.Location;
+            Point csize = context.Size;
             Point p = loc;
 
             switch (align)
@@ -200,6 +195,15 @@ namespace Squid
                     break;
                 case Alignment.MiddleRight:
                     p = new Point(loc.x + csize.x, loc.y + csize.y / 2 - Size.y / 2);
+                    break;
+                case Alignment.BottomLeft:
+                    p = loc + new Point(0, csize.y);
+                    break;
+                case Alignment.TopRight:
+                    p = loc + new Point(csize.x, 0);
+                    break;
+                case Alignment.TopLeft:
+                    p = loc - new Point(csize.x, 0);
                     break;
             }
 

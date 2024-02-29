@@ -173,26 +173,25 @@ namespace Squid
         {
             if (args.Button > 0) return;
 
-            ClickedPos = Gui.MousePosition;
+            ClickedPos = Gui.MousePosition / GetScale();
             OldSize = Parent.Size;
 
-            if (GripDown != null)
-                GripDown(sender, args);
+            GripDown?.Invoke(sender, args);
         }
 
         void Grip_OnUp(Control sender, MouseEventArgs args)
         {
             if (args.Button > 0) return;
 
-            if (GripUp != null)
-                GripUp(sender, args);
+            GripUp?.Invoke(sender, args);
         }
 
         void Grip_OnPress(Control sender, MouseEventArgs args)
         {
             if (args.Button > 0) return;
 
-            Point p = Gui.MousePosition - ClickedPos;
+            Point mousePos = Gui.MousePosition / GetScale();
+            Point p = mousePos - ClickedPos;
 
             Point position = Parent.Position;
             Point size = Parent.Size;
@@ -200,15 +199,14 @@ namespace Squid
             AnchorStyles anchor = (AnchorStyles) sender.Tag;
 
             if ((anchor & AnchorStyles.Left) == AnchorStyles.Left)
-                p.x = ClickedPos.x - Gui.MousePosition.x;
+                p.x = ClickedPos.x - mousePos.x;
             
             if ((anchor & AnchorStyles.Top) == AnchorStyles.Top)
-                p.y = ClickedPos.y - Gui.MousePosition.y;
+                p.y = ClickedPos.y - mousePos.y;
 
             Parent.ResizeTo(OldSize + p, anchor);
 
-            if (Resized != null)
-                Resized(this, Parent.Size - size, Parent.Position - position);
+            Resized?.Invoke(this, Parent.Size - size, Parent.Position - position);
         }
     }
 }

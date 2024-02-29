@@ -54,10 +54,12 @@ namespace Squid
         /// </summary>
         public DropDownButton()
         {
-            Dropdown = new Window();
-            Dropdown.Size = new Point(100, 200);
-            Dropdown.Resizable = true;
-            Dropdown.Scissor = false;
+            Dropdown = new Window
+            {
+                Size = new Point(100, 200),
+                Resizable = true,
+                Scissor = false
+            };
 
             Align = Alignment.BottomLeft;
 
@@ -100,11 +102,11 @@ namespace Squid
             }
 
             Desktop.ShowDropdown(Dropdown, true);
+            Dropdown.PerformLayout();
            
             IsOpen = true;
 
-            if (OnOpened != null)
-                OnOpened(this, null);
+            OnOpened?.Invoke(this, null);
         }
 
         public void Close()
@@ -121,8 +123,7 @@ namespace Squid
             Desktop.CloseDropdowns();
             IsOpen = false;
 
-            if (OnClosed != null)
-                OnClosed(this, null);
+            OnClosed?.Invoke(this, null);
         }
 
         public override bool Contains(Control control)

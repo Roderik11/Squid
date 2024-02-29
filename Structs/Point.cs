@@ -110,7 +110,7 @@ namespace Squid
         /// <returns>The result of the operator.</returns>
         public static Point operator *(Point a, float b)
         {
-            return new Point((int)((float)a.x * b), (int)((float)a.y * b));
+            return new Point((int)(a.x * b), (int)(a.y * b));
         }
 
         /// <summary>
@@ -157,7 +157,7 @@ namespace Squid
                 return false;
 
             Point size = (Point)obj;
-            return ((size.x == this.x) && (size.y == this.y));
+            return (size.x == x) && (size.y == y);
         }
 
         /// <summary>
@@ -166,7 +166,7 @@ namespace Squid
         /// <returns>A hash code for this instance, suitable for use in hashing algorithms and data structures like a hash table.</returns>
         public override int GetHashCode()
         {
-            return (this.x ^ this.y);
+            return x ^ y;
         }
 
         /// <summary>
@@ -187,10 +187,16 @@ namespace Squid
         /// <returns>Point.</returns>
         public static Point EaseTo(Point start, Point end, float divisor)
         {
-            float x = ((float)end.x - (float)start.x) / divisor;
-            float y = ((float)end.y - (float)start.y) / divisor;
+            float x = (end.x - (float)start.x) / divisor;
+            float y = (end.y - (float)start.y) / divisor;
 
             return start + new Point((int)x, (int)y);
+        }
+
+        public void Scale(float value)
+        {
+            x = (int)(x * value);
+            y = (int)(y * value);
         }
 
         static Point()

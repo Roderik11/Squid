@@ -91,8 +91,7 @@ namespace Squid
                 _value = Math.Min(_value, Maximum);
                 _value = Math.Max(_value, Minimum);
 
-                if (ValueChanged != null)
-                    ValueChanged(this);
+                ValueChanged?.Invoke(this);
             }
         }
 
@@ -226,8 +225,7 @@ namespace Squid
             {
                 Snap();
 
-                float m = _value;
-
+                float m;
                 if (Ease)
                 {
                     _easeScroll += ((_value - _easeScroll) / 8f) * Math.Min(8, Gui.TimeElapsed * 0.1f);
@@ -238,8 +236,7 @@ namespace Squid
                     m = (_value - Minimum) / (Maximum - Minimum);
                 }
 
-                Point end = Point.Zero;
-
+                Point end;
                 if (Orientation == Orientation.Vertical)
                 {
                     int size = Size.y;// (int)(Size.y - Button.Margin.Top - Button.Margin.Bottom);

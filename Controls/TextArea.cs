@@ -15,7 +15,7 @@ namespace Squid
         private int DoBlink;
         private bool HasFocus;
         private string SavedText;
-        private List<TextLine> Lines = new List<TextLine>();
+        private readonly List<TextLine> Lines = new List<TextLine>();
         private bool IsDirty;
         private Point TextSize;
         private string ActiveHref;
@@ -124,8 +124,7 @@ namespace Squid
                 _selectStart = 0;
                 _selectEnd = 0;
 
-                if (TextChanged != null)
-                    TextChanged(this);
+                TextChanged?.Invoke(this);
             }
         }
 
@@ -135,8 +134,7 @@ namespace Squid
             _text = text;
 
             IsDirty = true;
-            if (TextChanged != null)
-                TextChanged(this);
+            TextChanged?.Invoke(this);
         }
 
         /// <summary>
@@ -267,8 +265,7 @@ namespace Squid
         {
             HasFocus = false;
 
-            if (TextCommit != null)
-                TextCommit(this, null);
+            TextCommit?.Invoke(this, null);
         }
 
         void TextBox_MouseDoubleClick(Control sender, MouseEventArgs args)
@@ -794,8 +791,7 @@ namespace Squid
 
                 LostFocus += TextBox_LostFocus;
 
-                if (TextCancel != null)
-                    TextCancel(this, null);
+                TextCancel?.Invoke(this, null);
             }
             else
             {
@@ -895,7 +891,7 @@ namespace Squid
             List<TextElement> textElements = new List<TextElement>();
 
             Point pos = new Point();
-            Point tsize = new Point();
+            Point tsize;
 
             int lineHeight = 0;
             List<TextElement> thisLine = new List<TextElement>();
@@ -1304,7 +1300,7 @@ namespace Squid
                     {
                         int start = SelectionStart;
                         int end = SelectionEnd;
-                        int color = ColorInt.FromArgb(0.5f, -1);
+                        //int color = ColorInt.FromArgb(0.5f, -1);
 
                         //int origin = perline - element.Text.Length;
                         //start = Math.Max(0, origin - start);
