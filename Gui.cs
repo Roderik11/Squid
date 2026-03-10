@@ -15,6 +15,9 @@ namespace Squid
     {
         private static string Clipboard;
 
+        public static Action<string> OnSetClipboard;
+        public static Func<string> OnGetClipboard;
+
         public static TranslateStringHandler TranslateHandler;
         public static int Language { get; private set; }
 
@@ -218,13 +221,23 @@ namespace Squid
         /// sets the clipboard string
         /// </summary>
         /// <param name="data"></param>
-        public static void SetClipboard(string data) => Clipboard = data;
+        public static void SetClipboard(string data)
+        {
+            Clipboard = data;
+            OnSetClipboard?.Invoke(data);
+        }
 
         /// <summary>
         /// returns the current clipboard string
         /// </summary>
         /// <returns></returns>
-        public static string GetClipboard() => Clipboard;
+        public static string GetClipboard()
+        {
+            if (OnGetClipboard != null)
+                return OnGetClipboard.Invoke();
+
+            return Clipboard;
+        }
 
         /// <summary>
         /// generates a standard skin

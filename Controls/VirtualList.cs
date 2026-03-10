@@ -16,14 +16,15 @@ namespace Squid
         public int ItemSpacing = 0;
 
         public Action<Control, int> BindItem;
-
         public Func<int, Control> CreateItem;
 
-        private Stack<Control> itemStack = new Stack<Control>();
+        private readonly Stack<Control> itemStack = new Stack<Control>();
         
         private IList dataSource;
-        private Control topSpace;
-        private Control bottomSpace;
+        private readonly Control topSpace;
+        private readonly Control bottomSpace;
+        private bool fullRefresh;
+        private int lastTop = 0;
 
         public IList DataSource
         {
@@ -67,21 +68,14 @@ namespace Squid
             topSpace = new Control { Dock = DockStyle.Top, NoEvents = true, Style = "category" };
             bottomSpace = new Control { Dock = DockStyle.Bottom, NoEvents = true, Style = "category" };
             Content = new Frame { Dock = DockStyle.Fill, Style = "alterRows" };
+            
             ScrollContent.Controls.Add(topSpace);
             ScrollContent.Controls.Add(bottomSpace);
             ScrollContent.Controls.Add(Content);
 
-            var list = new List<int>();
-            for (int i = 0; i < 1000; i++)
-                list.Add(i);
-
-            DataSource = list;
             MouseWheel += On_MouseWheel;
             ClipFrame.SizeChanged += VirtualList_SizeChanged;
         }
-
-        private bool fullRefresh;
-        private int lastTop = 0;
 
         private void VirtualList_SizeChanged(Control sender)
         {
@@ -109,8 +103,16 @@ namespace Squid
             PerformLayout();
         }
 
+        public void ScrollToEnd()
+        {
+            Scrollbar.SetValue(1);
+            PerformLayout();
+        }
+
         public void UpdateVirtualList()
         {
+            if (dataSource == null) return;
+
             var itemCount = dataSource.Count;
             var containerSize = ScrollContent.Size;
             containerSize.y = ItemHeight * itemCount + ItemSpacing * itemCount - ItemSpacing;
@@ -135,6 +137,7 @@ namespace Squid
             for (int i = 0; i < addcount; i++)
             {
                 var control = itemStack.Count > 0 ? itemStack.Pop() : CreateItem(topIndex + i);
+                control.Size = new Point(control.Size.x, ItemHeight);
                 Content.Controls.Add(control);
                 lastTop = 0;
             }
