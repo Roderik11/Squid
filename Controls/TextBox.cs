@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
@@ -19,11 +19,62 @@ namespace Squid
         private int Offset;
         private int Caret;
         private bool HasFocus;
+        private bool _suppressCommit;
 
         private string _text = string.Empty;
         private string SavedText;
 
         private bool IsSelection => SelectStart != SelectEnd;
+
+        private string GetDisplayText()
+        {
+            if (IsPassword)
+                return new string(PasswordChar, _text.Length);
+            return _text;
+        }
+
+        private void DeleteSelection()
+        {
+            if (!IsSelection) return;
+
+            int start = Math.Min(SelectStart, SelectEnd);
+            int end = Math.Max(SelectStart, SelectEnd);
+
+            Text = Text.Remove(start, end - start);
+            Caret = start;
+            Offset = 0;
+            SelectStart = SelectEnd = Caret;
+        }
+
+        private void InsertAtCaret(string value)
+        {
+            if (string.IsNullOrEmpty(value)) return;
+
+            if (IsSelection)
+                DeleteSelection();
+
+            Text = Text.Insert(Caret, value);
+            if (Caret < Text.Length)
+                Caret += value.Length;
+
+            SelectStart = SelectEnd = Caret;
+        }
+
+        private int FindCaretFromMouse(string masked, int font)
+        {
+            Point p = Gui.MousePosition - Location;
+            int x = 0;
+
+            for (int i = 1; i <= masked.Length; i++)
+            {
+                string text = masked.Substring(0, i);
+                x = Offset + Gui.Renderer.GetTextSize(text, font).x;
+                if (x > p.x)
+                    return i - 1;
+            }
+
+            return x < p.x ? masked.Length : 0;
+        }
 
         /// <summary>
         /// Raised when [text changed].
@@ -231,17 +282,15 @@ namespace Squid
 
         void TextBox_LostFocus(Control sender)
         {
-            TextCommit?.Invoke(this, null);
+            if (!_suppressCommit)
+                TextCommit?.Invoke(this, null);
         }
 
         void TextBox_MouseDoubleClick(Control sender, MouseEventArgs args)
         {
             if (args.Button > 0) return;
 
-            string masked = Text;
-            if (IsPassword)
-                masked = new string(PasswordChar, masked.Length);
-
+            string masked = GetDisplayText();
             if (string.IsNullOrEmpty(masked)) return;
 
             int left = FindIndexLeft(Caret, masked);
@@ -255,7 +304,6 @@ namespace Squid
 
             SelectStart = left;
             SelectEnd = right;
-
             Caret = SelectEnd;
         }
 
@@ -264,43 +312,19 @@ namespace Squid
             if (args.Button > 0) return;
             if (Gui.CtrlPressed) return;
 
-            Style style = LocalStyle.Styles[State];
-
-            string masked = Text;
-            if (IsPassword)
-                masked = new string(PasswordChar, masked.Length);
-
+            string masked = GetDisplayText();
             if (string.IsNullOrEmpty(masked)) return;
 
+            Style style = LocalStyle.Styles[State];
             int font = Gui.Renderer.GetFont(style.Font);
             if (font < 0) return;
 
-            Point p = Gui.MousePosition - Location;
-            int x = 0;
-
-            string text = string.Empty;
-
-            for (int i = 1; i <= masked.Length; i++)
-            {
-                text = masked.Substring(0, i);
-                x = Offset + Gui.Renderer.GetTextSize(text, font).x;
-                if (x > p.x)
-                {
-                    SelectEnd = i - 1;
-                    break;
-                }
-            }
-
-            if (x < p.x)
-                SelectEnd = masked.Length;
-
-            int start = Math.Min(SelectStart, SelectEnd);
-            int end = Math.Max(SelectStart, SelectEnd);
+            SelectEnd = FindCaretFromMouse(masked, font);
 
             if (SelectEnd < SelectStart)
-                Caret = start;
+                Caret = Math.Min(SelectStart, SelectEnd);
             else
-                Caret = end;
+                Caret = Math.Max(SelectStart, SelectEnd);
         }
 
         void TextBox_MouseDown(Control sender, MouseEventArgs args)
@@ -313,33 +337,14 @@ namespace Squid
                 HasFocus = true;
             }
 
-            Style style = LocalStyle.Styles[State];
-
-            string masked = Text;
-            if (IsPassword)
-                masked = new string(PasswordChar, masked.Length);
-
+            string masked = GetDisplayText();
             if (string.IsNullOrEmpty(masked)) return;
 
+            Style style = LocalStyle.Styles[State];
             int font = Gui.Renderer.GetFont(style.Font);
             if (font < 0) return;
 
-            Point p = Gui.MousePosition - Location;
-
-            int x = 0;
-            for (int i = 1; i <= masked.Length; i++)
-            {
-                string text = masked.Substring(0, i);
-                x = Offset + Gui.Renderer.GetTextSize(text, font).x;
-                if (x > p.x)
-                {
-                    Caret = i - 1;
-                    break;
-                }
-            }
-
-            if (x < p.x)
-                Caret = masked.Length;
+            Caret = FindCaretFromMouse(masked, font);
 
             if (Gui.CtrlPressed)
             {
@@ -354,7 +359,6 @@ namespace Squid
 
                 SelectStart = left;
                 SelectEnd = right;
-
                 Caret = SelectEnd;
             }
             else if (Gui.ShiftPressed)
@@ -397,9 +401,7 @@ namespace Squid
         {
             if (Gui.CtrlPressed)
             {
-                string masked = Text;
-                if (IsPassword)
-                    masked = new string(PasswordChar, masked.Length);
+                string masked = GetDisplayText();
 
                 if (Gui.ShiftPressed)
                 {
@@ -464,9 +466,7 @@ namespace Squid
         {
             if (Gui.CtrlPressed)
             {
-                string masked = Text;
-                if (IsPassword)
-                    masked = new string(PasswordChar, masked.Length);
+                string masked = GetDisplayText();
 
                 if (Gui.ShiftPressed)
                 {
@@ -600,12 +600,7 @@ namespace Squid
             {
                 if (IsSelection)
                 {
-                    int start = Math.Min(SelectStart, SelectEnd);
-                    int end = Math.Max(SelectStart, SelectEnd);
-
-                    Text = Text.Remove(start, end - start);
-                    Caret = start;
-                    Offset = 0;
+                    DeleteSelection();
                 }
                 else
                 {
@@ -622,12 +617,7 @@ namespace Squid
             {
                 if (IsSelection)
                 {
-                    int start = Math.Min(SelectStart, SelectEnd);
-                    int end = Math.Max(SelectStart, SelectEnd);
-
-                    Text = Text.Remove(start, end - start);
-                    Caret = start;
-                    Offset = 0;
+                    DeleteSelection();
                 }
                 else
                 {
@@ -639,28 +629,23 @@ namespace Squid
             }
             else if (args.Key == Keys.RETURN || args.Key == Keys.NUMPADENTER) // return/enter
             {
-                LostFocus -= TextBox_LostFocus;
-
+                _suppressCommit = true;
                 root.FocusedControl = null;
                 Caret = 0;
-
                 SelectStart = SelectEnd = Caret;
-
-                LostFocus += TextBox_LostFocus;
+                _suppressCommit = false;
 
                 TextCommit?.Invoke(this, null);
             }
             else if (args.Key == Keys.ESCAPE)
             {
-                LostFocus -= TextBox_LostFocus;
-
+                _suppressCommit = true;
                 Text = SavedText;
                 root.FocusedControl = null;
                 Caret = 0;
                 HasFocus = false;
                 SelectStart = SelectEnd = Caret;
-
-                LostFocus += TextBox_LostFocus;
+                _suppressCommit = false;
 
                 TextCancel?.Invoke(this, null);
             }
@@ -678,42 +663,18 @@ namespace Squid
                     {
                         if (IsSelection)
                             Gui.SetClipboard(Selection);
-
                     }
-                    else if (args.Key == Keys.X) // copy
+                    else if (args.Key == Keys.X) // cut
                     {
                         if (IsSelection)
                         {
                             Gui.SetClipboard(Selection);
-
-                            int start = Math.Min(SelectStart, SelectEnd);
-                            int end = Math.Max(SelectStart, SelectEnd);
-
-                            Text = Text.Remove(start, end - start);
-                            Caret = start;
-                            Offset = 0;
+                            DeleteSelection();
                         }
                     }
                     else if (args.Key == Keys.V && !ReadOnly) // paste
                     {
-                        string paste = Gui.GetClipboard();
-                        if (!string.IsNullOrEmpty(paste))
-                        {
-                            if (IsSelection)
-                            {
-                                int start = Math.Min(SelectStart, SelectEnd);
-                                int end = Math.Max(SelectStart, SelectEnd);
-
-                                Text = Text.Remove(start, end - start);
-                                Caret = start;
-                            }
-
-                            Text = Text.Insert(Caret, paste.ToString());
-                            if (Caret < Text.Length)
-                                Caret += paste.Length;
-
-                            SelectStart = SelectEnd = Caret;
-                        }
+                        InsertAtCaret(Gui.GetClipboard());
                     }
                 }
                 else
@@ -726,28 +687,10 @@ namespace Squid
                             char c = args.Char.Value;
 
                             if (Mode == TextBoxMode.Numeric)
-                            {
-                                //valid = Double.TryParse(Text + c, out double result);
                                 valid = char.IsNumber(c) || char.IsDigit(c) || c == '.' || c == ',' || c == '-' || c == 'e';
-                            }
 
                             if (valid)
-                            {
-                                if (IsSelection)
-                                {
-                                    int start = Math.Min(SelectStart, SelectEnd);
-                                    int end = Math.Max(SelectStart, SelectEnd);
-
-                                    Text = Text.Remove(start, end - start);
-                                    Caret = start;
-                                }
-
-                                Text = Text.Insert(Caret, c.ToString());
-                                if (Caret < Text.Length)
-                                    Caret++;
-
-                                SelectStart = SelectEnd = Caret;
-                            }
+                                InsertAtCaret(c.ToString());
                         }
                     }
                 }
@@ -769,9 +712,7 @@ namespace Squid
         {
             if (_text == null) _text = string.Empty;
 
-            string masked = _text;
-            if (IsPassword)
-                masked = new string(PasswordChar, masked.Length);
+            string masked = GetDisplayText();
 
             int font = Gui.Renderer.GetFont(style.Font);
             if (font < 0) return;
