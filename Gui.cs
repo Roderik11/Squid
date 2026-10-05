@@ -48,6 +48,13 @@ namespace Squid
         public static ISquidRenderer Renderer { get; set; }
 
         /// <summary>
+        /// Optional. Given a font name and a UI scale, returns the font to draw with so text under a
+        /// scaled control (see Control.UIScale) follows the zoom. Layout still measures with the
+        /// unscaled font. When null, text is drawn at its normal size at every scale.
+        /// </summary>
+        public static Func<string, float, int> ScaledFontResolver { get; set; }
+
+        /// <summary>
         /// Elapsed time since last frame in milliseconds
         /// </summary>
         public static float TimeElapsed { get; set; }

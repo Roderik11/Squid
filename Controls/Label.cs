@@ -825,7 +825,9 @@ namespace Squid
                 {
                     if (element.Linebreak) continue;
 
-                    font = Gui.Renderer.GetFont(element.Font);
+                    font = scale != 1f && Gui.ScaledFontResolver != null
+                        ? Gui.ScaledFontResolver(element.Font, scale)
+                        : Gui.Renderer.GetFont(element.Font);
                     size = element.Size * scale;
                     p2 = ((element.Position * scale) + Location);// * scale;
 
