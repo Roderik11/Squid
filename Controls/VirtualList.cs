@@ -31,8 +31,10 @@ namespace Squid
             get { return dataSource; }
             set
             {
-                foreach(var child in Content.Controls)
-                    itemStack.Push(child);
+                itemStack.Clear();
+
+                //foreach (var child in Content.Controls)
+                //    itemStack.Push(child);
 
                 Content.Controls.Clear();
                 dataSource = value;
@@ -136,6 +138,7 @@ namespace Squid
             var addcount = requiredCount - Content.Controls.Count;
             for (int i = 0; i < addcount; i++)
             {
+                if(topIndex + i >= dataSource.Count) break;
                 var control = itemStack.Count > 0 ? itemStack.Pop() : CreateItem(topIndex + i);
                 control.Size = new Point(control.Size.x, ItemHeight);
                 Content.Controls.Add(control);
@@ -145,7 +148,7 @@ namespace Squid
             var removecount = Content.Controls.Count - requiredCount;
             for (int i = 0; i < removecount; i++)
             {
-                var control = Content.Controls.Last();
+                var control = Content.Controls[^1];
                 itemStack.Push(control);
                 Content.Controls.Remove(control);
                 lastTop = 0;
@@ -202,6 +205,7 @@ namespace Squid
 
             lastTop = topIndex;
         }
+
 
         protected override void OnUpdate()
         {

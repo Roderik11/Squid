@@ -227,6 +227,13 @@ namespace Squid
             Caret = SelectEnd;
         }
 
+        public void SelectAll()
+        {
+            SelectStart = 0;
+            SelectEnd = Text.Length;
+            Caret = Text.Length;
+        }
+
         /// <summary>
         /// Gets the selection.
         /// </summary>
