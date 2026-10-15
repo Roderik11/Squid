@@ -562,11 +562,47 @@ namespace Squid
             if (ClipRect.IsZeroSize)
                 return;
 
-            DrawBefore();
+            // With Gui.ControlException set, a control whose own drawing throws is reported and skipped for the frame;
+            // its children (which guard themselves) still draw and the scissor is still restored
+            try
+            {
+                DrawBefore();       // before the scissor: a modal Window darkens the whole desktop here
+            }
+            catch (Exception ex) when (Gui.ControlException != null)
+            {
+                Gui.ControlException(this, ex);
+            }
 
             if (Scissor || Gui.AlwaysScissor)
                 SetScissor(Math.Max(0, ClipRect.Left), Math.Max(0, ClipRect.Top), ClipRect.Width, ClipRect.Height);
 
+            try
+            {
+                DrawSelf();
+            }
+            catch (Exception ex) when (Gui.ControlException != null)
+            {
+                Gui.ControlException(this, ex);
+            }
+
+            DrawChildren();
+
+            try
+            {
+                DrawElements();
+                DrawCustom();
+            }
+            catch (Exception ex) when (Gui.ControlException != null)
+            {
+                Gui.ControlException(this, ex);
+            }
+
+            if (Scissor || Gui.AlwaysScissor)
+                ResetScissor();
+        }
+
+        private void DrawSelf()
+        {
             if (FadeSpeed > 0 || Gui.GlobalFadeSpeed > 0)
             {
                 Style next = LocalStyle.Styles[_state];
@@ -611,12 +647,6 @@ namespace Squid
             }
 
             DrawBeforeChildren();
-            DrawChildren();
-            DrawElements();
-            DrawCustom();
-
-            if (Scissor || Gui.AlwaysScissor)
-                ResetScissor();
         }
     }
 }

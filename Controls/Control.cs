@@ -847,7 +847,15 @@ namespace Squid
                     localLanguage = Gui.Language;
                 }
 
-                OnUpdate();
+                // As in Draw: with Gui.ControlException set, one control's failing update is reported, not fatal
+                try
+                {
+                    OnUpdate();
+                }
+                catch (Exception ex) when (Gui.ControlException != null)
+                {
+                    Gui.ControlException(this, ex);
+                }
 
                 for (int i = 0; i < elementCount; i++)
                     Elements[i].PerformUpdate();

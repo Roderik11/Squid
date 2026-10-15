@@ -55,6 +55,14 @@ namespace Squid
         public static Func<string, float, int> ScaledFontResolver { get; set; }
 
         /// <summary>
+        /// Optional. When set, an exception thrown by a control's own drawing (DrawBefore, DrawStyle, DrawText,
+        /// DrawElements, DrawCustom) or update (OnUpdate) is passed here and that control is skipped for the frame;
+        /// its children and every other control still draw and update. When null, exceptions propagate as before.
+        /// An application that must not die of one control's bug (an editor) sets it and logs.
+        /// </summary>
+        public static Action<Control, Exception> ControlException { get; set; }
+
+        /// <summary>
         /// Elapsed time since last frame in milliseconds
         /// </summary>
         public static float TimeElapsed { get; set; }
